@@ -529,3 +529,111 @@ node scripts/screenshot.js --width=375  --height=900 "--page=/nhan-vien/don-yeu-
 - **Giai đoạn 4** — màn hình Chủ quán (O4–O6): thêm / sửa / xóa nhân viên.
 - Máy không có `git` và không có thư mục `.git`: **toàn bộ thay đổi vẫn chỉ nằm trên đĩa**, chưa được
   commit ở đâu cả.
+
+## 10. UC13.1 — Sinh bảng lương thật (12/11/2026)
+
+Thay phần dữ liệu lương "có sẵn" bằng luồng sinh thật: đọc lịch làm việc + chấm công + đơn nghỉ đã
+duyệt + khoản ứng đã duyệt, chạy đúng công thức trong `src/utils/payroll.js`, ghi ra
+`BangLuong` / `PhieuLuong` / `ChiTietLuong`.
+
+### 10.1. Quyết định đã chốt với bạn
+
+| # | Vấn đề | Quyết định |
+| --- | --- | --- |
+| 1 | Cách kích hoạt UC13.1 (SRS chỉ ghi "tự động sau khi kết ca ngày cuối tháng", đặc tả M9 không có nút) | **Chỉ tự động** bằng job/scheduler. **Không** thêm nút "Tính lương", **không** đổi UI M9 — màn Bảng lương chỉ đọc dữ liệu đã có trong CSDL |
+| 2 | Tháng chưa kết thúc | **Không** sinh. Chỉ sinh khi ngày cuối kỳ < hôm nay |
+| 3 | Kỳ đã có bảng lương (kể cả đã sửa tay) | **Bỏ qua, không ghi đè** |
+| 4 | Chênh lệch kết chuyển (BR-UC13.1-08) | Ghi `0` ở mục này; xử lý cùng luồng đề xuất chỉnh sửa bảng lương (UC13.3) |
+
+### 10.2. File đã thêm / sửa
+
+| File | Nội dung |
+| --- | --- |
+| `src/services/payroll.service.js` (mới) | `periodMeta` (mốc kỳ, mã `BLyyyyMM`, ngày chi trả 05 tháng sau), `previousMonth`, `buildPeriodPayroll` (hàm thuần: gom ca theo nhân viên → gọi `computeShiftLine` từng ca → `computePayslip` → gắn khoản ứng), `generateMonthlyPayroll` (kiểm tra kỳ/kết thúc/rỗng, sinh mã `PL`/`CTL` tiếp nối, ghi trong một transaction có `UPDLOCK, HOLDLOCK` để 2 lượt chạy không sinh trùng), `runMonthlyPayrollCheck`, `RESULT` |
+| `src/jobs/payroll.job.js` (mới) | Chạy 1 lần khi khởi động + lặp mỗi 6 giờ; chỉ log khi thật sự sinh kỳ mới; lỗi được bắt để máy chủ không dừng |
+| `src/server.js` | Gọi `startPayrollJob()` sau khi `listen`, `stopPayrollJob()` trong `shutdown` |
+| `scripts/payroll.js` (mới) | Chạy tay/bù kỳ: `--month=YYYY-MM` hoặc `--year=YYYY --month=M`, mặc định tháng liền trước |
+| `package.json` | Thêm script `payroll:generate` |
+| `tests/payroll-generation.test.js` (mới) | 10 test cho mốc kỳ, chặn tháng chưa kết thúc, và cách dựng phiếu/dòng chi tiết |
+
+### 10.3. Cách hoạt động
+
+- **Ca làm** trong kỳ: mỗi dòng `LichLamViec` → một dòng `ChiTietLuong`. Chấm công lấy bản ghi
+  `ChamCong` mới nhất của ca; đơn nghỉ đã duyệt (`CT_XinNghi` + `DonXinNghi.TrangThai = 'Đã duyệt'`)
+  được đánh dấu để **không phạt bỏ ca**. Chấm công bổ sung đã duyệt đã ghi thẳng vào `ChamCong` từ
+  Giai đoạn 3 nên không cần xử lý riêng; đổi ca/làm thay đã duyệt đổi chủ `LichLamViec` nên cũng vậy.
+- **Phiếu lương**: mỗi nhân viên có ca trong kỳ → một `PhieuLuong` (`TienUngLuong` = tổng khoản ứng
+  `Đã duyệt`, chưa gắn phiếu, gửi trong kỳ; `ChenhLechKetChuyen = 0`).
+- Nhân viên **không có ca** trong kỳ → không tạo phiếu (giống cách seed đang làm).
+- Sau khi chèn phiếu, cập nhật `UngLuong.MaPL` cho các khoản ứng đã dùng, tất cả trong cùng transaction.
+
+### 10.4. Kiểm tra
+
+| Hạng mục | Kết quả |
+| --- | --- |
+| `node --test tests/` | **31/31** (21 test cũ + 10 test mới) |
+| `node scripts/payroll.js --month=2026-10` | `• Kỳ BL202610 đã có bảng lương — bỏ qua, không ghi đè.` |
+| Đối chiếu tích hợp trên CSDL thật (kỳ 09/2026) | Xóa kỳ seed → sinh lại: **10 phiếu · 117 dòng chi tiết · 2 khoản ứng**, khớp 100% với seed ở mọi trường, trừ **1 khác biệt đã dự kiến**: `NV007.ChenhLechKetChuyen` seed `50.000` → sinh `0` (theo quyết định 4) |
+| Chạy lần 2 cùng kỳ | `created=false, reason=exists` — không sinh trùng, không ghi đè |
+| Nạp lại dữ liệu demo | `node db/seed.js` → 3 kỳ / 30 phiếu / 360 dòng như cũ |
+
+Lỗi gặp và đã sửa trong lúc kiểm tra: `CONVERT(datetime, @start, 23)` trong truy vấn khoản ứng —
+style `23` chỉ dùng được khi đích là `date`, không dùng được với `datetime`; đã đổi sang
+`CONVERT(date, @start, 23)` (so sánh `datetime >= date` vẫn đúng).
+
+### 10.5. Còn lại của UC13.1
+
+- **Chênh lệch kết chuyển** (BR-UC13.1-08) — chuyển sang mục O3 (UC13.3).
+- Job chỉ xử lý **tháng liền trước**. Máy tắt qua nhiều tháng thì cần chạy bù bằng
+  `node scripts/payroll.js --month=YYYY-MM` cho từng kỳ còn thiếu.
+
+## 11. O2 — Chủ quán duyệt bước 2 (12/11/2026)
+
+### 11.1. Quyết định đã chốt với bạn
+
+| # | Vấn đề | Quyết định |
+| --- | --- | --- |
+| 1 | Trạng thái sau khi chủ quán duyệt | `Đã duyệt` (đúng SRS/BR-UC13.2-01). Bỏ hẳn `Đã chi trả`; seed đổi kỳ `BL202608` sang `Đã duyệt` |
+| 2 | Nút duyệt trên M10 dùng chung 2 vai trò | Theo **vai trò + trạng thái**: quản lý chỉ duyệt kỳ `Chưa duyệt`; chủ quán chỉ duyệt kỳ `Chờ chủ quán duyệt`. Chủ quán mở kỳ `Chưa duyệt` thấy nhãn "Chờ quản lý duyệt trước" |
+| 3 | Nơi lưu đề xuất chỉnh sửa (O3) | Dùng `PhanHoiLuong`, thêm 1 cột JSON + nới `LyDo`; không tạo bảng mới, không xóa dữ liệu |
+
+### 11.2. Migration `002_payroll_proposal.sql` (mới)
+
+| Mã | Thay đổi | Trạng thái |
+| --- | --- | --- |
+| P1 | `PhanHoiLuong.NoiDungDeXuat NVARCHAR(MAX) NULL` | đã chạy |
+| P2 | `PhanHoiLuong.LyDo NVARCHAR(50)` → `NVARCHAR(255)` | đã chạy |
+| P3 | `BangLuong.TinhTrang`: `Đã chi trả` → `Đã duyệt`; CHECK còn 4 giá trị | đã chạy |
+
+Script idempotent, không xóa dòng nào; chạy bằng `node scripts/migrate.js` (đã kiểm tra chạy 2 lần liên tiếp
+không đổi kết quả).
+
+### 11.3. File đã sửa
+
+| File | Nội dung |
+| --- | --- |
+| `src/services/payroll-admin.service.js` | `STATUS` còn 4 giá trị (`Chưa duyệt`, `Chờ chủ quán duyệt`, `Đã duyệt`, `Từ chối`), bỏ `MSG_PAID`; thêm `approvalTransition(role)` (bước duyệt theo vai trò), `MSG_APPROVED_FINAL`, `MSG_OWNER_APPROVES_FIRST`; `getApprovalPeriod(role)`, `approvePayroll(maBL, role)`, `rejectPayroll(maBL, role)`, `getApprovalDetail(..., role)` chạy theo vai trò; `updatePayrollLines` chặn chủ quán sửa |
+| `src/routes/manager.routes.js` | Truyền `req.session.user.role` vào 5 chỗ: danh sách duyệt, chi tiết, duyệt, không duyệt, lưu phạt |
+| `src/views/pages/manager/payroll-approve.ejs` | Nhánh `pendingManager`: hiện badge "Chờ quản lý duyệt trước" thay vì nút |
+| `src/views/pages/manager/payroll-approve-detail.ejs` | Thêm cụm nút "Không duyệt" + "Duyệt" và hộp thoại lý do cho người duyệt (đúng 7.2.2.44), badge trạng thái khi không được duyệt |
+| `src/services/request.service.js` | `isPayslipVisible` chỉ nhận `Đã duyệt`; bỏ nhánh `Đã chi trả` khỏi `statusMeta` (nhân viên vẫn thấy "Đã duyệt hoàn tất") |
+| `db/seed.js` | Kỳ mẫu `BL202608` dùng `Đã duyệt`; phản hồi lương mẫu gắn vào kỳ đó |
+| `tests/payroll-approval.test.js` (mới) | 5 test: 4 trạng thái, bước duyệt của quản lý/chủ quán, không vượt cấp, nhãn badge |
+
+### 11.4. Kiểm tra
+
+| Hạng mục | Kết quả |
+| --- | --- |
+| `node --test tests/` | **36/36** (31 cũ + 5 mới) |
+| Kiểm tra nghiệp vụ trực tiếp trên service | **16/16**: chủ quán duyệt kỳ `Chưa duyệt` bị chặn; chủ quán sửa tiền phạt bị chặn; quản lý duyệt → `Chờ chủ quán duyệt`; chủ quán duyệt → `Đã duyệt`; duyệt lại bị chặn; nhân viên thấy phiếu sau khi duyệt |
+| Kiểm tra HTTP thật (`/quan-ly`, `/chu-quan`) | **14/14**: M10 hiện đúng kỳ theo vai trò, nút Duyệt xuất hiện/ẩn đúng lúc, chi tiết của chủ quán không có nút sửa phạt, sau bước 2 kỳ rời khỏi danh sách chờ |
+| `node db/seed.js` sau khi đổi CHECK | Chạy thành công: 3 kỳ · 30 phiếu · 2 phản hồi lương |
+
+### 11.5. Cách kiểm tra thủ công
+
+1. Đăng nhập quản lý `0901234567 / 123456` → **Quản lý lương › Duyệt lương**: kỳ 10/2026 (`Chưa duyệt`) có nút **Duyệt**.
+2. Bấm **Duyệt** → kỳ chuyển `Chờ chủ quán duyệt`, nút biến mất.
+3. Đăng xuất, đăng nhập chủ quán `0909999999 / 123456` → **Quản lý lương › Duyệt lương**: kỳ 10/2026 hiện nút **Duyệt**.
+4. Bấm **Duyệt** → kỳ chuyển `Đã duyệt`; nhân viên của kỳ đó mở **Kiểm tra phiếu lương** thấy phiếu.
+5. Mở một kỳ `Chưa duyệt` bằng tài khoản chủ quán → chỉ thấy nhãn **Chờ quản lý duyệt trước**, không có nút sửa phạt.
+

@@ -106,7 +106,7 @@ const CHENH_LECH = [
 
 /** Trạng thái 3 kỳ lương mẫu. */
 const BANG_LUONG_PLAN = [
-  { monthOffset: -3, tinhTrang: 'Đã chi trả' },
+  { monthOffset: -3, tinhTrang: 'Đã duyệt' },
   { monthOffset: -2, tinhTrang: 'Chờ chủ quán duyệt' },
   { monthOffset: -1, tinhTrang: 'Chưa duyệt' },
 ];
@@ -962,7 +962,7 @@ async function seedAdvances(tx, plan, payrollResult) {
   );
 
   /* --- Phản hồi lương trên kỳ đã chi trả ------------------------------- */
-  const paidBangLuong = payrollResult.bangLuongRows.find((b) => b.TinhTrang === 'Đã chi trả');
+  const paidBangLuong = payrollResult.bangLuongRows.find((b) => b.TinhTrang === 'Đã duyệt');
   const feedback = [];
 
   if (paidBangLuong) {

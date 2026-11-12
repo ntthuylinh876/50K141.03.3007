@@ -77,6 +77,8 @@
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button class="btn" type="submit">Duyệt</button>
             </form>
+          <% } else if (pendingManager) { %>
+            <span class="badge badge--warning">Chờ quản lý duyệt trước</span>
           <% } else { %>
             <span class="badge badge--info"><%= period.tinhTrang %></span>
           <% } %>

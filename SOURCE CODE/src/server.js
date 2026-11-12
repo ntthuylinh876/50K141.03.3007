@@ -20,6 +20,7 @@ const { flashMiddleware } = require('./middleware/flash');
 const { attachCsrfToken, verifyCsrfToken } = require('./middleware/csrf');
 const { viewLocals } = require('./middleware/locals');
 const { notFoundHandler, errorHandler } = require('./middleware/error');
+const { startPayrollJob, stopPayrollJob } = require('./jobs/payroll.job');
 const routes = require('./routes');
 
 const app = express();
@@ -135,8 +136,12 @@ async function start() {
     console.log('');
   });
 
+  // UC13.1: sinh bảng lương cho tháng đã kết thúc (BR-UC13.1-01).
+  startPayrollJob();
+
   const shutdown = async (signal) => {
     console.log(`\n[APP] Nhận ${signal}, đang đóng kết nối...`);
+    stopPayrollJob();
     server.close(async () => {
       await closePool();
       process.exit(0);

@@ -177,6 +177,9 @@ Toàn bộ chi tiết ở `docs/PHAN_TICH_BUOC0.md`, mục 13. Tóm tắt các t
 | C1 | `NhanVien.MatKhau`, `QuanLy.MatKhau` → `VARCHAR(100)` | chứa hash bcrypt (60 ký tự) |
 | C2 | `BangLuong.TinhTrang` thêm `N'Chờ chủ quán duyệt'`, `N'Từ chối'` | luồng duyệt 2 bước BR-UC13.2-01 |
 | C3 | `ChamCongBoSung` thêm `NgayGui`, `LyDo`, `TrangThai` (+ CHECK) | UC04 cần lưu lý do và trạng thái duyệt |
+| P1 | `PhanHoiLuong` thêm `NoiDungDeXuat NVARCHAR(MAX)` | lưu đề xuất chỉnh sửa lương dạng JSON (UC13.3) |
+| P2 | `PhanHoiLuong.LyDo` → `NVARCHAR(255)` | lý do chỉnh sửa dài hơn 50 ký tự |
+| P3 | `BangLuong.TinhTrang`: bỏ `N'Đã chi trả'`, dữ liệu cũ đổi sang `N'Đã duyệt'` | trạng thái cuối của luồng duyệt 2 bước |
 
 ## 8. Giả định đã chốt với người dùng
 
@@ -189,7 +192,7 @@ Toàn bộ chi tiết ở `docs/PHAN_TICH_BUOC0.md`, mục 13. Tóm tắt các t
    *Ngoại lệ có chủ đích:* `NV001 Nguyễn Minh Anh` tồn tại ở cả hai bảng (đúng như ảnh UI);
    khi đăng nhập hệ thống ưu tiên vai trò Quản lý.
 7. **`DangKyCaLam.LichRanh`** lưu danh sách ngày ISO cách nhau dấu phẩy.
-8. **Bảng lương mẫu:** 3 kỳ gần nhất (`Đã chi trả`, `Chờ chủ quán duyệt`, `Chưa duyệt`);
+8. **Bảng lương mẫu:** 3 kỳ gần nhất (`Đã duyệt`, `Chờ chủ quán duyệt`, `Chưa duyệt`);
    tháng hiện tại chưa có bảng lương — đúng BR-UC13.1-01 (chỉ tổng hợp sau khi kết ca
    ngày cuối tháng).
 9. **NV004 `Phạm Đình Huy`** giữ `TinhTrang = N'Thử việc'` đúng dữ liệu ảnh UI, nên chỉ

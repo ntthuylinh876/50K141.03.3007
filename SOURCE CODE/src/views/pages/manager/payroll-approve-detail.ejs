@@ -113,11 +113,49 @@
         </form>
       </section>
 
+      <% if (canApprove) { %>
+        <div class="approve-actions">
+          <button type="button" class="btn btn--secondary" data-open-modal="#rejectPayrollModal">
+            Không duyệt
+          </button>
+          <form method="post" action="<%= basePath %>/luong/duyet/<%= period.maBL %>/duyet">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn" type="submit">Duyệt</button>
+          </form>
+        </div>
+
+        <div class="modal-overlay" data-modal id="rejectPayrollModal" hidden>
+          <div class="modal-card modal-card--form" role="dialog" aria-modal="true"
+               aria-label="Lý do không duyệt bảng lương" tabindex="-1">
+            <form method="post"
+                  action="<%= basePath %>/luong/duyet/<%= period.maBL %>/khong-duyet"
+                  novalidate data-validate-form>
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+              <div class="form-group">
+                <label class="form-label" for="rejectPayrollReason">Lý do</label>
+                <input class="form-input" type="text" id="rejectPayrollReason" name="lyDo"
+                       data-required="Vui lòng nhập lý do.">
+              </div>
+
+              <div class="modal__actions">
+                <button type="submit" class="btn">Gửi</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      <% } %>
+
       <div class="form-actions form-actions--start">
         <a class="btn btn--light" href="<%= basePath %>/luong/duyet">
           <svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
           Quay lại
         </a>
+        <% if (!canApprove && pendingManager) { %>
+          <span class="badge badge--warning">Chờ quản lý duyệt trước</span>
+        <% } else if (!canApprove) { %>
+          <span class="badge badge--info"><%= period.tinhTrang %></span>
+        <% } %>
       </div>
     </main>
   </div>

@@ -23,18 +23,22 @@ const { nextMaCC } = require('../utils/id');
 /* -------------------------------------------------------------------------- */
 
 const MSG_APPROVED = 'Bảng lương đã được gửi chủ quán duyệt!';
+const MSG_APPROVED_FINAL = 'Bảng lương đã được duyệt!';
 const MSG_REJECTED = 'Không duyệt bảng lương!';
 const MSG_UPDATED = 'Cập nhật bảng lương thành công!';
 const MSG_NO_ERROR = 'Phát hiện không có sai sót với phiếu lương!';
 const MSG_CORRECTION = 'Chỉnh sửa phiếu lương cần duyệt!';
 const MSG_NO_PERIOD = 'Chưa có bảng lương nào!';
-const MSG_PAID = 'Bảng lương đã chi trả, không thể chỉnh sửa.';
+const MSG_OWNER_APPROVES_FIRST = 'Chờ quản lý duyệt trước.';
+
+/** Vai trò chủ quán — duyệt bước cuối (BR-UC13.2-01). */
+const ROLE_OWNER = 'owner';
 
 const STATUS = Object.freeze({
   PENDING: 'Chưa duyệt',
   WAITING_OWNER: 'Chờ chủ quán duyệt',
+  APPROVED: 'Đã duyệt',
   REJECTED: 'Từ chối',
-  PAID: 'Đã chi trả',
 });
 
 const PAGE_SIZE = 8;
@@ -42,7 +46,7 @@ const PAGE_SIZE = 8;
 /** Nhãn trạng thái kèm lớp badge tương ứng. */
 function statusMeta(tinhTrang) {
   const value = String(tinhTrang || '').trim();
-  if (value === STATUS.PAID) return { label: value, tone: 'success' };
+  if (value === STATUS.APPROVED) return { label: value, tone: 'success' };
   if (value === STATUS.WAITING_OWNER) return { label: value, tone: 'info' };
   if (value === STATUS.REJECTED) return { label: value, tone: 'danger' };
   if (value === STATUS.PENDING) return { label: value, tone: 'warning' };
@@ -325,26 +329,37 @@ async function recalcPayslip(maPL) {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Kỳ lương cần duyệt: ưu tiên kỳ "Chưa duyệt", nếu không có thì lấy kỳ
- * "Chờ chủ quán duyệt" gần nhất để màn hình hiển thị đúng trạng thái (7.2.2.45).
+ * Kỳ lương cần duyệt theo vai trò (BR-UC13.2-01):
+ *  - Quản lý: kỳ "Chưa duyệt" gần nhất; nếu không có thì hiện kỳ đang chờ
+ *    chủ quán để biết tình trạng (7.2.2.45).
+ *  - Chủ quán: kỳ "Chờ chủ quán duyệt" gần nhất; nếu không có thì hiện kỳ
+ *    "Chưa duyệt" kèm ghi chú "Chờ quản lý duyệt trước".
+ *
+ * @param {string} [role] vai trò người dùng hiện tại
  */
-async function getApprovalPeriod() {
+async function getApprovalPeriod(role) {
+  const isOwner = role === ROLE_OWNER;
+  const primary = isOwner ? STATUS.WAITING_OWNER : STATUS.PENDING;
+  const secondary = isOwner ? STATUS.PENDING : STATUS.WAITING_OWNER;
+
   const result = await query(
     `SELECT TOP 1 bl.MaBL, bl.Thang, bl.Nam, bl.TinhTrang,
             bl.NgayBatDau, bl.NgayKetThuc, bl.NgayChiTra,
             (SELECT COUNT(*) FROM PhieuLuong pl WHERE pl.MaBL = bl.MaBL) AS SoPhieu
        FROM BangLuong bl
-      WHERE bl.TinhTrang IN (@pending, @waiting)
-      ORDER BY CASE WHEN bl.TinhTrang = @pending THEN 0 ELSE 1 END,
+      WHERE bl.TinhTrang IN (@primary, @secondary)
+      ORDER BY CASE WHEN bl.TinhTrang = @primary THEN 0 ELSE 1 END,
                bl.Nam DESC, bl.Thang DESC`,
     {
-      pending: { type: sql.NVarChar(20), value: STATUS.PENDING },
-      waiting: { type: sql.NVarChar(20), value: STATUS.WAITING_OWNER },
+      primary: { type: sql.NVarChar(20), value: primary },
+      secondary: { type: sql.NVarChar(20), value: secondary },
     },
   );
 
   const row = result.recordset[0];
-  if (!row) return { period: null, rows: [], isEmpty: true, canApprove: false };
+  if (!row) {
+    return { period: null, rows: [], isEmpty: true, canApprove: false, pendingManager: false };
+  }
 
   const period = mapPeriod(row);
   const summary = await getPayrollSummary(period.maBL);
@@ -353,41 +368,81 @@ async function getApprovalPeriod() {
     period,
     rows: summary.rows,
     isEmpty: summary.isEmpty,
-    canApprove: period.tinhTrang === STATUS.PENDING,
+    canApprove: period.tinhTrang === primary,
+    pendingManager: isOwner && period.tinhTrang === STATUS.PENDING,
   };
 }
 
-/** Duyệt bảng lương: chuyển sang "Chờ chủ quán duyệt". */
-async function approvePayroll(maBL) {
+/**
+ * Bước duyệt tương ứng với vai trò (BR-UC13.2-01).
+ *  - Quản lý: "Chưa duyệt" → "Chờ chủ quán duyệt".
+ *  - Chủ quán: "Chờ chủ quán duyệt" → "Đã duyệt".
+ *
+ * @param {string} [role]
+ * @returns {{from: string, to: string, message: string}}
+ */
+function approvalTransition(role) {
+  if (role === ROLE_OWNER) {
+    return { from: STATUS.WAITING_OWNER, to: STATUS.APPROVED, message: MSG_APPROVED_FINAL };
+  }
+  return { from: STATUS.PENDING, to: STATUS.WAITING_OWNER, message: MSG_APPROVED };
+}
+
+/**
+ * Duyệt bảng lương theo vai trò (BR-UC13.2-01):
+ *  - Quản lý: "Chưa duyệt" → "Chờ chủ quán duyệt".
+ *  - Chủ quán: "Chờ chủ quán duyệt" → "Đã duyệt".
+ *
+ * @param {string} maBL
+ * @param {string} [role]
+ */
+async function approvePayroll(maBL, role) {
   const period = await getPeriod(maBL);
   if (!period) throw notFound('Không tìm thấy bảng lương.');
-  if (period.tinhTrang !== STATUS.PENDING) {
-    throw badRequest('Bảng lương này không ở trạng thái chờ duyệt.');
+
+  const step = approvalTransition(role);
+
+  if (period.tinhTrang !== step.from) {
+    throw badRequest(
+      role === ROLE_OWNER
+        ? 'Bảng lương này không ở trạng thái chờ chủ quán duyệt.'
+        : 'Bảng lương này không ở trạng thái chờ quản lý duyệt.',
+    );
   }
 
   await query(
-    `UPDATE BangLuong SET TinhTrang = @status WHERE MaBL = @maBL`,
+    `UPDATE BangLuong SET TinhTrang = @to WHERE MaBL = @maBL AND TinhTrang = @from`,
     {
-      status: { type: sql.NVarChar(20), value: STATUS.WAITING_OWNER },
+      to: { type: sql.NVarChar(20), value: step.to },
+      from: { type: sql.NVarChar(20), value: step.from },
       maBL: { type: sql.Char(10), value: period.maBL },
     },
   );
 
-  return MSG_APPROVED;
+  return step.message;
 }
 
 /**
- * Không duyệt bảng lương.
+ * Không duyệt bảng lương ở bước mà vai trò hiện tại phụ trách.
  * CSDL không có cột lưu lý do không duyệt nên lý do chỉ dùng để xác nhận thao tác.
+ *
+ * @param {string} maBL
+ * @param {string} [role]
  */
-async function rejectPayroll(maBL) {
+async function rejectPayroll(maBL, role) {
   const period = await getPeriod(maBL);
   if (!period) throw notFound('Không tìm thấy bảng lương.');
 
+  const from = approvalTransition(role).from;
+  if (period.tinhTrang !== from) {
+    throw badRequest('Bảng lương này không ở bước duyệt của bạn.');
+  }
+
   await query(
-    `UPDATE BangLuong SET TinhTrang = @status WHERE MaBL = @maBL`,
+    `UPDATE BangLuong SET TinhTrang = @status WHERE MaBL = @maBL AND TinhTrang = @from`,
     {
       status: { type: sql.NVarChar(20), value: STATUS.REJECTED },
+      from: { type: sql.NVarChar(20), value: from },
       maBL: { type: sql.Char(10), value: period.maBL },
     },
   );
@@ -395,13 +450,20 @@ async function rejectPayroll(maBL) {
   return MSG_REJECTED;
 }
 
-/** Chi tiết một phiếu trong màn Duyệt bảng lương (kèm cờ cho phép sửa). */
-async function getApprovalDetail(maBL, maNV, page) {
+/**
+ * Chi tiết một phiếu trong màn Duyệt bảng lương (kèm cờ theo vai trò).
+ * Quản lý chỉ sửa được kỳ "Chưa duyệt"; chủ quán chỉ duyệt, không sửa.
+ */
+async function getApprovalDetail(maBL, maNV, page, role) {
   const detail = await getPayrollDetail(maBL, maNV, page);
+  const isOwner = role === ROLE_OWNER;
+  const tinhTrang = detail.period.tinhTrang;
+
   return {
     ...detail,
-    editable: detail.period.tinhTrang === STATUS.PENDING,
-    canApprove: detail.period.tinhTrang === STATUS.PENDING,
+    editable: !isOwner && tinhTrang === STATUS.PENDING,
+    canApprove: isOwner ? tinhTrang === STATUS.WAITING_OWNER : tinhTrang === STATUS.PENDING,
+    pendingManager: isOwner && tinhTrang === STATUS.PENDING,
   };
 }
 
@@ -413,9 +475,12 @@ async function getApprovalDetail(maBL, maNV, page) {
  * @param {string} maPL
  * @param {Record<string, unknown>} body dữ liệu form
  */
-async function updatePayrollLines(maBL, maPL, body) {
+async function updatePayrollLines(maBL, maPL, body, role) {
   const period = await getPeriod(maBL);
   if (!period) throw notFound('Không tìm thấy bảng lương.');
+  if (role === ROLE_OWNER) {
+    throw badRequest('Chỉ quản lý được chỉnh sửa bảng lương.');
+  }
   if (period.tinhTrang !== STATUS.PENDING) {
     throw badRequest('Bảng lương này không ở trạng thái chờ duyệt.');
   }
@@ -718,14 +783,16 @@ async function savePayslipCorrection(maPL, maCTL, input) {
 
 module.exports = {
   MSG_APPROVED,
+  MSG_APPROVED_FINAL,
   MSG_REJECTED,
   MSG_UPDATED,
   MSG_NO_ERROR,
   MSG_CORRECTION,
   MSG_NO_PERIOD,
-  MSG_PAID,
+  MSG_OWNER_APPROVES_FIRST,
   STATUS,
   statusMeta,
+  approvalTransition,
   getPeriods,
   getPeriod,
   getLatestPeriod,

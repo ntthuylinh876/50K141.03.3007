@@ -532,14 +532,11 @@ async function getAdvanceHistory(maNV) {
 
 /** Trạng thái bảng lương được phép hiển thị phiếu lương (BR-UC8-01). */
 function isPayslipVisible(tinhTrang) {
-  return tinhTrang === 'Đã duyệt' || tinhTrang === 'Đã chi trả';
+  return tinhTrang === 'Đã duyệt';
 }
 
 /** Nhãn trạng thái và màu chấm tròn theo đặc tả màn hình. */
 function statusMeta(tinhTrang) {
-  if (tinhTrang === 'Đã chi trả') {
-    return { label: 'Đã chi trả', tone: 'success' };
-  }
   if (tinhTrang === 'Đã duyệt') {
     return { label: 'Đã duyệt hoàn tất', tone: 'success' };
   }

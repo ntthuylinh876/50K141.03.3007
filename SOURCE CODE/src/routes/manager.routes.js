@@ -375,7 +375,7 @@ router.get('/luong/bang-luong/:maBL/:maNV', async (req, res, next) => {
 
 router.get('/luong/duyet', async (req, res, next) => {
   try {
-    const ctx = await payrollService.getApprovalPeriod();
+    const ctx = await payrollService.getApprovalPeriod(req.session.user.role);
     return res.render('pages/manager/payroll-approve', {
       pageTitle: 'Duyệt bảng lương',
       activeMenu: 'payroll-approve',
@@ -392,6 +392,7 @@ router.get('/luong/duyet/:maBL/:maNV', async (req, res, next) => {
       req.params.maBL,
       req.params.maNV,
       req.query.trang,
+      req.session.user.role,
     );
     return res.render('pages/manager/payroll-approve-detail', {
       pageTitle: 'Duyệt bảng lương',
@@ -405,7 +406,10 @@ router.get('/luong/duyet/:maBL/:maNV', async (req, res, next) => {
 
 router.post('/luong/duyet/:maBL/duyet', async (req, res, next) => {
   try {
-    const message = await payrollService.approvePayroll(req.params.maBL);
+    const message = await payrollService.approvePayroll(
+      req.params.maBL,
+      req.session.user.role,
+    );
     req.flash('success', message);
     return redirectTo(req, res, '/luong/duyet');
   } catch (err) {
@@ -419,7 +423,10 @@ router.post('/luong/duyet/:maBL/duyet', async (req, res, next) => {
 
 router.post('/luong/duyet/:maBL/khong-duyet', async (req, res, next) => {
   try {
-    const message = await payrollService.rejectPayroll(req.params.maBL);
+    const message = await payrollService.rejectPayroll(
+      req.params.maBL,
+      req.session.user.role,
+    );
     req.flash('error', message);
     return redirectTo(req, res, '/luong/duyet');
   } catch (err) {
@@ -440,6 +447,7 @@ router.post('/luong/duyet/:maBL/:maNV', async (req, res, next) => {
       req.params.maBL,
       req.body.maPL,
       req.body,
+      req.session.user.role,
     );
     req.flash('success', message);
     return res.redirect(backTo);
