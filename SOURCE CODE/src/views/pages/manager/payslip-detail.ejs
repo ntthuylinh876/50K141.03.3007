@@ -1,0 +1,92 @@
+<%- include('../../partials/head') %>
+
+<%
+  // Tên ca rút gọn như ảnh thiết kế: "Ca tối" -> "Tối".
+  var shortShift = function (name) {
+    var value = String(name || '').replace(/^Ca\s+/i, '');
+    return value ? value.charAt(0).toUpperCase() + value.slice(1) : '';
+  };
+%>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý lương</span>
+        <span class="breadcrumb__sep">›</span>
+        <a href="<%= basePath %>/luong/cap-nhat">Cập nhật bảng lương</a>
+      </nav>
+
+      <section class="data-card">
+        <div class="data-card__head">
+          <div>
+            <h1 class="data-card__title">Chi tiết phiếu lương</h1>
+            <p class="data-card__subtitle"><%= slip.hoTen %> · <%= slip.kyLabel %></p>
+          </div>
+          <span class="data-card__note">Đơn vị: VNĐ</span>
+        </div>
+
+        <% if (isEmpty) { %>
+          <div class="empty-state">
+            <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
+            <p class="empty-state__title">Phiếu lương chưa có dữ liệu chấm công!</p>
+          </div>
+        <% } else { %>
+          <div class="table-wrap">
+            <table class="table table--rows">
+              <thead>
+                <tr>
+                  <th scope="col">Ngày</th>
+                  <th scope="col">Ca làm</th>
+                  <th scope="col">Giờ vào</th>
+                  <th scope="col">Giờ ra</th>
+                  <th scope="col">Số giờ</th>
+                  <th scope="col">Hệ số ngày</th>
+                  <th scope="col">Phạt</th>
+                  <th scope="col">Ứng</th>
+                  <th scope="col">Thực nhận</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.forEach(function (row, index) { %>
+                  <tr class="table__row--link <%= index === 0 ? 'is-highlight' : '' %>"
+                      data-row-href="<%= basePath %>/luong/cap-nhat/<%= slip.maPL %>/doi-chieu/<%= row.maCTL %>">
+                    <td class="u-nowrap">
+                      <a class="row-link"
+                         href="<%= basePath %>/luong/cap-nhat/<%= slip.maPL %>/doi-chieu/<%= row.maCTL %>"><%= row.ngay %></a>
+                    </td>
+                    <td><%= shortShift(row.tenCa) %></td>
+                    <td class="u-strong"><%= row.gioVaoLabel %></td>
+                    <td><%= row.gioRaLabel %></td>
+                    <td><%= row.soGioLabel %></td>
+                    <td><%= row.heSoLabel %></td>
+                    <td><%= row.phatLabel %>đ</td>
+                    <td><%= row.ungLabel %>đ</td>
+                    <td class="u-strong"><%= row.thucNhanLabel %>đ</td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="data-card__foot">
+            <% if (firstRow) { %>
+              <a class="btn" href="<%= basePath %>/luong/cap-nhat/<%= slip.maPL %>/doi-chieu/<%= firstRow.maCTL %>">
+                <svg width="16" height="16" aria-hidden="true"><use href="#i-search"></use></svg>
+                Đối chiếu dữ liệu
+              </a>
+            <% } %>
+          </div>
+        <% } %>
+      </section>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot', { pageScripts: ['/js/manager.js'] }) %>

@@ -1,0 +1,64 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="/nhan-vien/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Xem lịch làm việc</span>
+      </nav>
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-head__title">Xem lịch làm việc</h1>
+        </div>
+      </div>
+
+      <section class="card">
+        <div class="card__body">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">
+                Lịch làm việc của tôi - <%= isCurrentWeek ? 'Tuần hiện tại' : 'Tuần' %> (<%= weekShort %>)
+              </h2>
+              <p class="section-subtitle">các ca làm việc và thời gian được phân công</p>
+            </div>
+          </div>
+
+          <% if (emptyMessage) { %>
+            <p class="form-alert" role="alert">
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-alert"></use></svg>
+              <%= emptyMessage %>
+            </p>
+          <% } %>
+
+          <div class="sched-grid">
+            <% days.forEach(function (day) { %>
+              <div class="sched-day <%= day.isToday ? 'is-today' : '' %>">
+                <p class="sched-day__label"><%= day.label %></p>
+
+                <% if (day.shifts.length === 0) { %>
+                  <span class="sched-off">Nghỉ</span>
+                <% } else { %>
+                  <% day.shifts.forEach(function (shift) { %>
+                    <div class="sched-shift">
+                      <span class="sched-shift__name"><%= shift.tenCa %></span>
+                      <span class="sched-shift__time">(<%= shift.gioBatDau %> - <%= shift.gioKetThuc %>)</span>
+                    </div>
+                  <% }); %>
+                <% } %>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

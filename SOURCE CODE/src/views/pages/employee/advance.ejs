@@ -1,0 +1,105 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <div class="page-head">
+        <div>
+          <h1 class="page-head__title">Ứng lương</h1>
+        </div>
+      </div>
+
+      <% if (error) { %>
+        <p class="form-alert" role="alert">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-alert"></use></svg>
+          <%= error %>
+        </p>
+      <% } %>
+
+      <section class="card">
+        <div class="card__body">
+          <div class="section-head">
+            <h2 class="section-title">Bạn muốn ứng bao nhiêu?</h2>
+            <span class="section-icon" aria-hidden="true">
+              <svg><use href="#i-wallet"></use></svg>
+            </span>
+          </div>
+
+          <form method="post" action="/nhan-vien/don-yeu-cau/ung-luong" data-advance-form novalidate>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+            <div class="advance-grid">
+              <% amounts.forEach(function (amount) { %>
+                <label class="advance-card">
+                  <input type="radio" class="advance-card__input" name="soTien"
+                         value="<%= amount %>" data-amount="<%= amount %>"
+                         <%= selected === amount ? 'checked' : '' %>>
+                  <span class="advance-card__head">
+                    <span class="advance-card__label">
+                      <span class="advance-card__label-idle">Mức ứng</span>
+                      <span class="advance-card__label-active">Đang chọn</span>
+                    </span>
+                    <span class="advance-card__dot" aria-hidden="true"></span>
+                  </span>
+                  <span class="advance-card__amount"><%= fmt.formatCurrency(amount) %></span>
+                </label>
+              <% }); %>
+            </div>
+
+            <div class="advance-total">
+              <span>Số tiền ứng đã chọn</span>
+              <strong data-advance-total><%= selected ? fmt.formatCurrency(selected) : 'Chưa chọn' %></strong>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn">
+                Gửi yêu cầu
+                <svg aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <% if (history.length) { %>
+        <section class="card u-mt-6">
+          <div class="card__header">
+            <h2 class="card__title">Lịch sử ứng lương</h2>
+          </div>
+          <div class="table-wrap">
+            <table class="table table--compact">
+              <thead>
+                <tr>
+                  <th>Mã</th>
+                  <th>Ngày gửi</th>
+                  <th class="table__num">Số tiền</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% history.forEach(function (item) { %>
+                  <tr>
+                    <td class="u-nowrap"><%= item.ma %></td>
+                    <td class="u-nowrap"><%= item.ngayGui %></td>
+                    <td class="table__num"><%= fmt.formatCurrency(item.soTien) %></td>
+                    <td>
+                      <span class="badge <%= item.trangThai === 'Đã duyệt' ? 'badge--success' : (item.trangThai === 'Từ chối' ? 'badge--danger' : 'badge--warning') %>">
+                        <%= item.trangThai %>
+                      </span>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

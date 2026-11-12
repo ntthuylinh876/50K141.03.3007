@@ -1,0 +1,6 @@
+  <script src="/js/app.js" defer></script>
+  <% (pageScripts || []).forEach(function (src) { %>
+    <script src="<%= src %>" defer></script>
+  <% }); %>
+</body>
+</html>

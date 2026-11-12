@@ -1,0 +1,174 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý chấm công</span>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Dữ liệu chấm công</span>
+      </nav>
+
+      <form method="get" action="<%= basePath %>/cham-cong/du-lieu">
+        <div class="page-head">
+          <h1 class="page-head__title">Dữ liệu chấm công</h1>
+          <button class="btn" type="submit">
+            <svg width="16" height="16" aria-hidden="true"><use href="#i-search"></use></svg>
+            Xem
+          </button>
+        </div>
+
+        <div class="filter-grid">
+          <div class="filter-card">
+            <span class="filter-label">
+              <svg width="20" height="20" aria-hidden="true"><use href="#i-calendar"></use></svg>
+              Thời gian
+            </span>
+
+            <div class="segmented segmented--sm" role="group" aria-label="Xem theo">
+              <label class="segmented__item">
+                <input class="u-sr-only" type="radio" name="cheDo" value="ngay"
+                       <%= mode === 'ngay' ? 'checked' : '' %> data-auto-submit>
+                <span>Ngày</span>
+              </label>
+              <label class="segmented__item">
+                <input class="u-sr-only" type="radio" name="cheDo" value="tuan"
+                       <%= mode === 'tuan' ? 'checked' : '' %> data-auto-submit>
+                <span>Tuần</span>
+              </label>
+            </div>
+
+            <% if (mode === 'ngay') { %>
+              <input class="filter-input" type="date" name="ngay" value="<%= selectedDate %>"
+                     aria-label="Ngày làm việc">
+            <% } else { %>
+              <select class="filter-input" name="tuan" aria-label="Tuần làm việc">
+                <% weeks.weeks.forEach(function (item) { %>
+                  <option value="<%= item.weekStart %>" <%= item.isSelected ? 'selected' : '' %>>
+                    Tuần <%= item.index %> (<%= item.label %>)
+                  </option>
+                <% }); %>
+              </select>
+            <% } %>
+          </div>
+
+          <div class="filter-card">
+            <span class="filter-label">
+              <svg width="20" height="20" aria-hidden="true"><use href="#i-users"></use></svg>
+              Nhân viên
+            </span>
+            <select class="filter-input" name="nhanVien" aria-label="Nhân viên">
+              <option value="">Tất cả</option>
+              <% employees.forEach(function (item) { %>
+                <option value="<%= item.maNV %>" <%= item.maNV === maNV ? 'selected' : '' %>>
+                  <%= item.hoTen %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+
+          <div class="filter-card">
+            <span class="filter-label">Ca làm</span>
+            <select class="filter-input" name="ca" aria-label="Ca làm">
+              <option value="">Tất cả</option>
+              <% shifts.forEach(function (item) { %>
+                <option value="<%= item.maCa %>" <%= item.maCa === maCa ? 'selected' : '' %>>
+                  <%= item.label %>
+                </option>
+              <% }); %>
+            </select>
+          </div>
+        </div>
+      </form>
+
+      <% if (summary) { %>
+        <div class="summary-cards">
+          <div class="summary-card">
+            <p class="summary-card__value"><%= fmt.formatHours(summary.tongGio) %>h</p>
+            <p class="summary-card__label">Tổng số giờ làm</p>
+          </div>
+          <div class="summary-card">
+            <p class="summary-card__value"><%= summary.soCaTre %></p>
+            <p class="summary-card__label">Tổng số ca đi trễ</p>
+          </div>
+          <div class="summary-card">
+            <p class="summary-card__value"><%= summary.soCaBo %></p>
+            <p class="summary-card__label">Tổng số ca bỏ</p>
+          </div>
+        </div>
+
+        <div class="person-card">
+          <p class="person-card__name">
+            <span class="u-strong">Nhân viên:</span>
+            <span><%= selectedEmployee.hoTen %></span>
+          </p>
+
+          <% if (isEmpty) { %>
+            <p class="u-text-muted"><%= emptyMessage %></p>
+          <% } else { %>
+            <div class="table-wrap">
+              <table class="table table--compact">
+                <thead>
+                  <tr>
+                    <th scope="col">Ngày</th>
+                    <th scope="col">Giờ vào</th>
+                    <th scope="col">Giờ ra</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% rows.forEach(function (row) { %>
+                    <tr>
+                      <td class="u-nowrap"><%= row.ngay %></td>
+                      <td class="u-strong"><%= row.gioVaoLabel %></td>
+                      <td class="u-strong"><%= row.gioRaLabel %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } %>
+        </div>
+      <% } else if (isEmpty) { %>
+        <div class="empty-state">
+          <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
+          <p class="empty-state__title"><%= emptyMessage %></p>
+        </div>
+      <% } else { %>
+        <div class="data-card data-card--table">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Thời gian</th>
+                  <th scope="col">Nhân viên</th>
+                  <th scope="col">Ca làm</th>
+                  <th scope="col">Giờ vào</th>
+                  <th scope="col">Giờ ra</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.forEach(function (row) { %>
+                  <tr>
+                    <td class="u-nowrap"><%= row.ngay %></td>
+                    <td><%= row.hoTen %></td>
+                    <td class="u-strong"><%= row.tenCa %></td>
+                    <td><%= row.gioVaoLabel %></td>
+                    <td><%= row.gioRaLabel %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

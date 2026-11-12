@@ -1,0 +1,87 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <a href="<%= basePath %>/ca-lam/cap-nhat">Cập nhật ca làm</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Chỉnh sửa ca</span>
+      </nav>
+
+      <div class="page-head">
+        <h1 class="page-head__title">Cập nhật ca làm</h1>
+      </div>
+
+      <p class="shift-banner">
+        <%= tenCa %> · <%= ngayLabel %> · <%= khungGio %>
+      </p>
+
+      <% if (isPast) { %>
+        <p class="form-error form-error--block">
+          <svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg>
+          Không thể cập nhật ca đã diễn ra.
+        </p>
+      <% } %>
+
+      <form method="post" action="<%= basePath %>/ca-lam/cap-nhat/<%= maCa %>/<%= ngayISO %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="staff-grid">
+          <section class="staff-card">
+            <h2 class="staff-card__title">Nhân viên trong ca</h2>
+            <div class="staff-list" data-staff-list="in">
+              <% inShift.forEach(function (nv) { %>
+                <label class="staff-row">
+                  <input class="u-sr-only" type="checkbox" name="maNV" value="<%= nv.maNV %>"
+                         checked data-staff-toggle>
+                  <span class="staff-row__name"><%= nv.hoTen %></span>
+                  <span class="staff-pill" data-staff-pill>
+                    <svg aria-hidden="true"><use href="#i-minus"></use></svg>
+                    <span data-staff-label>Gỡ</span>
+                  </span>
+                </label>
+              <% }); %>
+              <% if (!inShift.length) { %>
+                <p class="staff-empty">Chưa có nhân viên nào trong ca.</p>
+              <% } %>
+            </div>
+          </section>
+
+          <section class="staff-card">
+            <h2 class="staff-card__title">Nhân viên không thuộc ca</h2>
+            <div class="staff-list" data-staff-list="out">
+              <% notInShift.forEach(function (nv) { %>
+                <label class="staff-row">
+                  <input class="u-sr-only" type="checkbox" name="maNV" value="<%= nv.maNV %>"
+                         data-staff-toggle>
+                  <span class="staff-row__name"><%= nv.hoTen %></span>
+                  <span class="staff-pill" data-staff-pill>
+                    <svg aria-hidden="true"><use href="#i-plus"></use></svg>
+                    <span data-staff-label>Thêm</span>
+                  </span>
+                </label>
+              <% }); %>
+              <% if (!notInShift.length) { %>
+                <p class="staff-empty">Tất cả nhân viên đã có trong ca.</p>
+              <% } %>
+            </div>
+          </section>
+        </div>
+
+        <div class="form-actions form-actions--end">
+          <a class="btn btn--light" href="<%= basePath %>/ca-lam/cap-nhat">← Quay lại</a>
+          <button class="btn" type="submit" <%= isPast ? 'disabled' : '' %>>Lưu</button>
+        </div>
+      </form>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot', { pageScripts: ['/js/manager.js'] }) %>

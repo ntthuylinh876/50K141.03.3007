@@ -1,0 +1,102 @@
+/* ==========================================================================
+   Design tokens — trích trực tiếp từ bộ ảnh thiết kế trong doc/UI
+   Không đổi giá trị nếu chưa đối chiếu lại ảnh gốc.
+   ========================================================================== */
+
+:root {
+  /* --- Màu nền --- */
+  --cream-bg: #fff8f0;
+  --card-bg: #fffbf7;
+  --card-bg-alt: #fffcf8;
+  --white: #ffffff;
+
+  /* --- Nâu (thương hiệu) --- */
+  --brown-400: #b98a72;
+  --brown-500: #a1745f; /* sidebar, ô ca đã chọn */
+  --brown-600: #7a4528; /* nút chính, ngày được chọn */
+  --brown-700: #542b14; /* tiêu đề, chữ đậm */
+  --brown-800: #3d1f0e;
+
+  /* --- Cát / be --- */
+  --sand-50: #fdf4ea;
+  --sand-100: #f8ddbf; /* nút nhạt (Check out) */
+  --sand-200: #f0e1d3; /* header bảng */
+  --sand-300: #d8b79d; /* dòng được chọn */
+  --sand-400: #e8d5c5;
+
+  /* --- Điểm nhấn --- */
+  --gold: #c89b6a;
+  --gold-soft: #e6c9a5;
+  --green: #14a352;
+  --green-soft: #e6f6ec;
+  --red: #c0392b;
+  --red-soft: #fdeceb;
+  --amber: #d68910;
+  --amber-soft: #fdf3e3;
+  --blue: #2e6da4;
+  --blue-soft: #eaf2f9;
+
+  /* --- Chữ --- */
+  --text-strong: #3d2317;
+  --text-body: #55463d;
+  --text-muted: #8c7b70;
+  --text-on-dark: #fffaf5;
+  --text-on-dark-muted: rgba(255, 250, 245, 0.72);
+
+  /* --- Viền --- */
+  --border: #ecdccd;
+  --border-strong: #ddc6b2;
+  --border-input: #e0cdbc;
+
+  /* --- Bo góc --- */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 999px;
+
+  /* --- Đổ bóng --- */
+  --shadow-xs: 0 1px 2px rgba(84, 43, 20, 0.05);
+  --shadow-sm: 0 2px 8px rgba(84, 43, 20, 0.06);
+  --shadow-md: 0 8px 24px rgba(84, 43, 20, 0.09);
+  --shadow-lg: 0 18px 48px rgba(84, 43, 20, 0.14);
+  --shadow-focus: 0 0 0 3px rgba(161, 116, 95, 0.22);
+
+  /* --- Khoảng cách --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 56px;
+
+  /* --- Kiểu chữ --- */
+  --font-display: 'Playfair Display', 'Times New Roman', serif;
+  --font-body: 'Be Vietnam Pro', 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  --text-xs: 0.75rem;   /* 12px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-base: 0.875rem;/* 14px */
+  --text-md: 0.9375rem; /* 15px */
+  --text-lg: 1.0625rem; /* 17px */
+  --text-xl: 1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;   /* 24px */
+  --text-3xl: 1.875rem; /* 30px */
+  --text-4xl: 2.5rem;   /* 40px */
+
+  /* --- Bố cục --- */
+  --sidebar-width: 300px;
+  --sidebar-inset: 32px;
+  --topbar-height: 84px;
+  --content-max: 960px;
+
+  /* --- Chuyển động --- */
+  --ease: cubic-bezier(0.32, 0.72, 0.24, 1);
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --dur-slow: 320ms;
+}

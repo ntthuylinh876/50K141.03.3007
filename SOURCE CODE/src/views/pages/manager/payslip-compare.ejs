@@ -1,0 +1,76 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý lương</span>
+        <span class="breadcrumb__sep">›</span>
+        <a href="<%= basePath %>/luong/cap-nhat/<%= line.maPL %>">Chi tiết phiếu lương</a>
+      </nav>
+
+      <section class="data-card">
+        <div class="data-card__head">
+          <div>
+            <h1 class="data-card__title">Đối chiếu chấm công và lịch làm</h1>
+            <p class="data-card__subtitle"><%= line.hoTen %> · <%= line.ngay %></p>
+          </div>
+        </div>
+
+        <div class="compare-grid">
+          <% cards.forEach(function (card) { %>
+            <% var isWarn = card.key === 'payslip' && card.isMismatch; %>
+            <article class="compare-card">
+              <h2 class="compare-card__title"><%= card.title %></h2>
+              <p class="compare-card__meta">Giờ vào · <%= card.dateLabel %></p>
+              <p class="compare-card__time <%= isWarn ? 'compare-card__time--warn' : 'compare-card__time--ok' %>">
+                <%= card.gioVao %>
+              </p>
+              <p class="compare-card__meta">Giờ ra: <span class="compare-card__value"><%= card.gioRa %></span></p>
+            </article>
+          <% }); %>
+        </div>
+
+        <div class="compare-actions">
+          <button type="button" class="btn btn--secondary" data-open-modal="#noErrorModal">
+            Không có sai sót
+          </button>
+
+          <a class="btn" href="<%= basePath %>/luong/cap-nhat/<%= line.maPL %>/chinh-sua/<%= line.maCTL %>">
+            <svg width="16" height="16" aria-hidden="true"><use href="#i-edit"></use></svg>
+            Chỉnh sửa
+          </a>
+        </div>
+      </section>
+
+      <div class="modal-overlay" data-modal id="noErrorModal" hidden>
+        <div class="modal-card modal-card--form" role="dialog" aria-modal="true"
+             aria-label="Xác nhận không có sai sót" tabindex="-1">
+          <form method="post"
+                action="<%= basePath %>/luong/cap-nhat/<%= line.maPL %>/khong-co-sai-sot"
+                novalidate data-validate-form>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+            <div class="form-group">
+              <label class="form-label" for="noErrorReason">Lý do</label>
+              <input class="form-input" type="text" id="noErrorReason" name="lyDo"
+                     data-required="Vui lòng nhập lý do.">
+            </div>
+
+            <div class="modal__actions">
+              <button type="submit" class="btn">Gửi</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot', { pageScripts: ['/js/manager.js'] }) %>

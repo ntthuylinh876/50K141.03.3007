@@ -1,0 +1,344 @@
+﻿<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="/nhan-vien/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Đăng ký xin nghỉ/đổi ca</span>
+      </nav>
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-head__title">Đăng ký xin nghỉ/đổi ca</h1>
+        </div>
+      </div>
+
+      <div class="tabs tabs--equal" role="tablist" aria-label="Loại yêu cầu">
+        <a class="tabs__item <%= tab === 'leave' ? 'is-active' : '' %>"
+           href="?tab=leave" role="tab" aria-selected="<%= tab === 'leave' %>">[ Xin nghỉ ]</a>
+        <a class="tabs__item <%= tab === 'swap' ? 'is-active' : '' %>"
+           href="?tab=swap" role="tab" aria-selected="<%= tab === 'swap' %>">[ Đổi ca ]</a>
+        <a class="tabs__item <%= tab === 'cover' ? 'is-active' : '' %>"
+           href="?tab=cover" role="tab" aria-selected="<%= tab === 'cover' %>">[ Làm thay ]</a>
+      </div>
+
+      <% if (error) { %>
+        <p class="form-alert" role="alert">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-alert"></use></svg>
+          <%= error %>
+        </p>
+      <% } %>
+
+      <!-- ================================================================ -->
+      <!-- Xin nghỉ                                                          -->
+      <!-- ================================================================ -->
+      <% if (tab === 'leave') { %>
+        <section class="card u-mt-5">
+          <div class="card__body">
+            <h2 class="section-title">Đăng ký xin nghỉ</h2>
+
+            <% if (upcoming.length === 0) { %>
+              <div class="empty-state">
+                <svg aria-hidden="true"><use href="#i-calendar"></use></svg>
+                <p class="empty-state__title">Bạn chưa có ca làm việc nào sắp tới</p>
+                <p class="empty-state__text">Cần có ca làm được phân công trước khi gửi đơn xin nghỉ.</p>
+              </div>
+            <% } else { %>
+              <form method="post" action="/nhan-vien/don-yeu-cau/xin-nghi" id="leaveForm" novalidate data-validate-form>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="phuongThuc">Phương thức nghỉ <span class="req">(*)</span>:</label>
+                    <select class="form-select" id="phuongThuc" name="phuongThuc">
+                      <option value="ca" <%= form.phuongThuc !== 'ngay' ? 'selected' : '' %>>Nghỉ theo ca</option>
+                      <option value="ngay" <%= form.phuongThuc === 'ngay' ? 'selected' : '' %>>Nghỉ cả ngày</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="leaveMaLich">Thời gian nghỉ <span class="req">(*)</span>:</label>
+                    <select class="form-select <%= fieldErrors.maLich ? 'is-invalid' : '' %>"
+                            id="leaveMaLich" name="maLich"
+                            data-required="Vui lòng điền đầy đủ thông tin">
+                      <option value="">-- Chọn ca làm --</option>
+                      <% upcoming.forEach(function (shift) { %>
+                        <option value="<%= shift.maLich %>" <%= form.maLich === shift.maLich ? 'selected' : '' %>>
+                          <%= shift.label %>
+                        </option>
+                      <% }); %>
+                    </select>
+                    <% if (fieldErrors.maLich) { %>
+                      <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.maLich %></p>
+                    <% } %>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="leaveLyDo">Lý do nghỉ <span class="req">(*)</span>:</label>
+                  <textarea class="form-textarea <%= fieldErrors.lyDo ? 'is-invalid' : '' %>"
+                            id="leaveLyDo" name="lyDo" rows="4"
+                            placeholder="Nhập lí do nghỉ."
+                            data-required="Vui lòng điền đầy đủ thông tin"><%= form.lyDo || '' %></textarea>
+                  <% if (fieldErrors.lyDo) { %>
+                    <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.lyDo %></p>
+                  <% } %>
+                </div>
+              </form>
+            <% } %>
+          </div>
+        </section>
+
+        <% if (upcoming.length > 0) { %>
+          <div class="form-actions form-actions--end">
+            <button type="submit" class="btn" form="leaveForm">Gửi yêu cầu</button>
+          </div>
+        <% } %>
+      <% } %>
+
+      <!-- ================================================================ -->
+      <!-- Đổi ca                                                            -->
+      <!-- ================================================================ -->
+      <% if (tab === 'swap') { %>
+        <section class="card u-mt-5">
+          <div class="card__body">
+            <div class="section-head">
+              <div>
+                <h2 class="section-title">
+                  Lịch làm việc của tôi - <%= myWeek.isCurrentWeek ? 'Tuần hiện tại' : 'Tuần' %> (<%= myWeek.weekShort %>)
+                </h2>
+              </div>
+              <div class="week-nav">
+                <a class="btn btn--secondary btn--sm" href="?tab=swap&amp;tuan=<%= prevWeek %>">‹ Tuần trước</a>
+                <a class="btn btn--secondary btn--sm" href="?tab=swap&amp;tuan=<%= nextWeek %>">Tuần sau ›</a>
+              </div>
+            </div>
+
+            <div class="swap-grid">
+              <% myWeek.days.forEach(function (day) { %>
+                <div class="swap-day">
+                  <p class="swap-day__label"><%= day.label %></p>
+                  <% if (day.shifts.length === 0) { %>
+                    <div class="swap-card swap-card--off">
+                      <span class="swap-card__pill">Nghỉ</span>
+                    </div>
+                  <% } else { %>
+                    <% day.shifts.forEach(function (shift) { %>
+                      <a class="swap-card swap-card--has <%= selectedShift && selectedShift.maLich === shift.maLich ? 'is-selected' : '' %>"
+                         href="?tab=swap&amp;tuan=<%= weekStart %>&amp;ca=<%= shift.maLich %>">
+                        <span class="swap-card__pill">
+                          <span class="swap-card__name"><%= shift.tenCa %></span>
+                          <span class="swap-card__time">(<%= shift.gioBatDau %> - <%= shift.gioKetThuc %>)</span>
+                        </span>
+                        <span class="swap-card__arrow" aria-hidden="true">
+                          <svg width="20" height="20"><use href="#i-arrow-right"></use></svg>
+                        </span>
+                      </a>
+                    <% }); %>
+                  <% } %>
+                </div>
+              <% }); %>
+            </div>
+
+            <% if (!selectedShift) { %>
+              <p class="form-hint u-mt-4">Chọn ca bạn muốn đổi để xem lịch của đồng nghiệp.</p>
+            <% } %>
+          </div>
+        </section>
+
+        <% if (selectedShift) { %>
+          <section class="card u-mt-6">
+            <div class="card__body">
+              <h2 class="section-title">Đổi ca</h2>
+              <p class="selected-note">
+                <svg aria-hidden="true"><use href="#i-clock"></use></svg>
+                <%= selectedShift.label %>
+              </p>
+
+              <div class="swap-panel">
+                <form method="get" action="/nhan-vien/don-yeu-cau/xin-nghi-doi-ca" class="search-field">
+                  <input type="hidden" name="tab" value="swap">
+                  <input type="hidden" name="tuan" value="<%= weekStart %>">
+                  <input type="hidden" name="ca" value="<%= selectedShift.maLich %>">
+                  <svg class="search-field__icon" aria-hidden="true"><use href="#i-search"></use></svg>
+                  <input class="form-input" type="search" name="tim"
+                         value="<%= keyword %>" placeholder="Tìm kiếm đồng nghiệp..."
+                         aria-label="Tìm kiếm đồng nghiệp">
+                </form>
+
+                <% if (colleagues.length === 0) { %>
+                  <p class="form-hint u-mt-4">Không tìm thấy đồng nghiệp phù hợp.</p>
+                <% } else { %>
+                  <div class="people-list u-mt-4">
+                    <% colleagues.forEach(function (person) { %>
+                      <a class="people-item <%= selectedColleague && selectedColleague.maNV === person.maNV ? 'is-selected' : '' %>"
+                         href="?tab=swap&amp;tuan=<%= weekStart %>&amp;ca=<%= selectedShift.maLich %>&amp;ban=<%= person.maNV %>&amp;tim=<%= encodeURIComponent(keyword) %>">
+                        <span class="people-item__avatar" aria-hidden="true">
+                          <svg><use href="#i-user"></use></svg>
+                        </span>
+                        <span class="people-item__name"><%= person.hoTen %></span>
+                      </a>
+                    <% }); %>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </section>
+
+          <% if (selectedColleague) { %>
+            <section class="card u-mt-6">
+              <div class="card__body">
+                <h2 class="section-title">Đổi ca</h2>
+
+                <form method="post" action="/nhan-vien/don-yeu-cau/doi-ca" id="swapForm" novalidate data-validate-form>
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="maLichGoc" value="<%= selectedShift.maLich %>">
+
+                  <div class="pick-panel">
+                    <p class="pick-panel__title">
+                      Lịch làm việc tuần này của <%= selectedColleague.hoTen %>
+                    </p>
+
+                    <div class="pick-grid">
+                      <% colleagueWeek.days.forEach(function (day) { %>
+                        <div class="pick-day">
+                          <p class="pick-day__label"><%= day.label %></p>
+                          <% if (day.shifts.length === 0) { %>
+                            <span class="pick-card pick-card--off">Nghỉ</span>
+                          <% } else { %>
+                            <% day.shifts.forEach(function (shift) { %>
+                              <label class="pick-card pick-card--pick">
+                                <input type="radio" name="maLichMuonDoi" value="<%= shift.maLich %>"
+                                       data-required="Vui lòng chọn ca muốn đổi.">
+                                <span class="pick-card__name"><%= shift.tenCa %></span>
+                                <span class="pick-card__time"><%= shift.gioBatDau %> - <%= shift.gioKetThuc %></span>
+                              </label>
+                            <% }); %>
+                          <% } %>
+                        </div>
+                      <% }); %>
+                    </div>
+                  </div>
+
+                  <div class="form-group u-mt-5">
+                    <label class="form-label" for="swapLyDo">Lý do đổi ca</label>
+                    <textarea class="form-textarea" id="swapLyDo" name="lyDo" rows="3"
+                              placeholder="Nhập lý do đổi ca."
+                              data-required="Vui lòng điền đầy đủ thông tin"></textarea>
+                  </div>
+                </form>
+              </div>
+            </section>
+
+            <div class="form-actions form-actions--end">
+              <button type="submit" class="btn" form="swapForm">Gửi yêu cầu</button>
+            </div>
+          <% } %>
+        <% } %>
+      <% } %>
+
+      <!-- ================================================================ -->
+      <!-- Làm thay                                                          -->
+      <!-- ================================================================ -->
+      <% if (tab === 'cover') { %>
+        <section class="card u-mt-5">
+          <div class="card__body">
+            <h2 class="section-title">Làm thay</h2>
+
+            <% if (emptyShifts.length === 0) { %>
+              <div class="empty-state">
+                <svg aria-hidden="true"><use href="#i-clipboard-check"></use></svg>
+                <p class="empty-state__title">Chưa có ca nào đang thiếu người</p>
+                <p class="empty-state__text">Các ca trống sẽ xuất hiện khi đồng nghiệp gửi đơn xin nghỉ.</p>
+              </div>
+            <% } else { %>
+              <div class="table-wrap">
+                <table class="table table--compact cover-table">
+                  <thead>
+                    <tr>
+                      <th>Ngày</th>
+                      <th>Ca làm</th>
+                      <th>Thời gian</th>
+                      <th>Trạng thái</th>
+                      <th>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% emptyShifts.forEach(function (shift, index) { %>
+                      <tr class="<%= index === 0 ? 'is-first' : '' %>">
+                        <td class="u-nowrap"><%= shift.ngayLabel %></td>
+                        <td class="u-nowrap"><%= shift.tenCa %></td>
+                        <td class="u-nowrap"><%= shift.thoiGian %></td>
+                        <td class="u-nowrap">Trống</td>
+                        <td>
+                          <form method="post" action="/nhan-vien/don-yeu-cau/lam-thay">
+                            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                            <input type="hidden" name="maLich" value="<%= shift.maLich %>">
+                            <button type="submit" class="btn btn--sm">Đăng ký nhận ca</button>
+                          </form>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            <% } %>
+          </div>
+        </section>
+      <% } %>
+
+      <!-- ================================================================ -->
+      <!-- Đơn đã gửi                                                        -->
+      <!-- ================================================================ -->
+      <% var sent = []; %>
+      <% history.leaves.forEach(function (item) { sent.push({ loai: 'Xin nghỉ', noiDung: item.thoiGian + ' · ' + item.soCa + ' ca', lyDo: item.lyDo, ngayGui: item.ngayGui, trangThai: item.trangThai }); }); %>
+      <% history.swaps.forEach(function (item) { sent.push({ loai: 'Đổi ca', noiDung: item.noiDung, lyDo: item.lyDo, ngayGui: item.ngayGui, trangThai: item.trangThai }); }); %>
+      <% history.covers.forEach(function (item) { sent.push({ loai: 'Làm thay', noiDung: item.noiDung, lyDo: item.lyDo, ngayGui: item.ngayGui, trangThai: item.trangThai }); }); %>
+
+      <% if (sent.length) { %>
+        <section class="card u-mt-6">
+          <div class="card__header">
+            <h2 class="card__title">Đơn đã gửi</h2>
+          </div>
+          <div class="table-wrap">
+            <table class="table table--compact">
+              <thead>
+                <tr>
+                  <th>Loại đơn</th>
+                  <th>Nội dung</th>
+                  <th>Lý do</th>
+                  <th>Ngày gửi</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% sent.forEach(function (item) { %>
+                  <tr>
+                    <td class="u-nowrap"><%= item.loai %></td>
+                    <td><%= item.noiDung %></td>
+                    <td><%= item.lyDo %></td>
+                    <td class="u-nowrap"><%= item.ngayGui %></td>
+                    <td>
+                      <span class="badge <%= item.trangThai === 'Đã duyệt' ? 'badge--success' : (item.trangThai === 'Từ chối' ? 'badge--danger' : 'badge--warning') %>">
+                        <%= item.trangThai %>
+                      </span>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>
+

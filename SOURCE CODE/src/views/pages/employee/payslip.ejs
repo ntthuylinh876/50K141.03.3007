@@ -1,0 +1,225 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <div class="page-head">
+        <div>
+          <h1 class="page-head__title">Kiểm tra phiếu lương</h1>
+        </div>
+      </div>
+
+      <% if (periods.length === 0) { %>
+        <div class="card">
+          <div class="empty-state">
+            <svg aria-hidden="true"><use href="#i-wallet"></use></svg>
+            <p class="empty-state__title">Bạn chưa có phiếu lương nào</p>
+            <p class="empty-state__text">Phiếu lương sẽ xuất hiện sau khi bảng lương được chủ quán duyệt.</p>
+          </div>
+        </div>
+      <% } else { %>
+
+        <!-- ------------------------------------------------------------ -->
+        <!-- Chọn kỳ lương và trạng thái phê duyệt                        -->
+        <!-- ------------------------------------------------------------ -->
+        <section class="card">
+          <div class="card__body">
+            <div class="period-bar">
+              <form method="get" action="/nhan-vien/phieu-luong" class="period-form">
+                <label class="form-label" for="ky">Kỳ lương hiện tại:</label>
+                <select class="form-select" id="ky" name="ky" data-auto-submit>
+                  <% periods.forEach(function (item) { %>
+                    <option value="<%= item.maBL %>" <%= item.maBL === selected.maBL ? 'selected' : '' %>>
+                      <%= item.label %>
+                    </option>
+                  <% }); %>
+                </select>
+                <noscript><button type="submit" class="btn btn--sm">Xem</button></noscript>
+              </form>
+
+              <p class="status-line">
+                <span class="status-dot status-dot--<%= status.tone %>" aria-hidden="true"></span>
+                Trạng thái: <strong><%= status.label %></strong>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <% if (!canView) { %>
+          <!-- Phiếu lương chưa được phê duyệt (BR-UC8-01) -->
+          <section class="card u-mt-6">
+            <div class="empty-state">
+              <svg aria-hidden="true"><use href="#i-alert"></use></svg>
+              <p class="empty-state__title">Phiếu lương kỳ này chưa được phê duyệt</p>
+              <p class="empty-state__text">
+                Trạng thái: <strong><%= status.label %></strong>. Vui lòng quay lại sau khi chủ quán duyệt bảng lương.
+              </p>
+              <a class="btn btn--secondary empty-state__action" href="/nhan-vien/trang-chu">Quay lại</a>
+            </div>
+          </section>
+        <% } else { %>
+
+          <!-- ---------------------------------------------------------- -->
+          <!-- Thông tin phiếu lương                                      -->
+          <!-- ---------------------------------------------------------- -->
+          <section class="card u-mt-6">
+            <div class="card__body">
+              <h2 class="section-title">Thông tin phiếu lương kỳ hiện tại (<%= payslip.tuNgay %>)</h2>
+
+              <dl class="pay-rows">
+                <div class="pay-row">
+                  <dt>Mức lương</dt>
+                  <dd><%= fmt.formatNumber(payslip.mucLuong) %> VND / giờ</dd>
+                </div>
+                <div class="pay-row">
+                  <dt>Tổng số giờ làm</dt>
+                  <dd><%= fmt.formatHours(payslip.tongGioLam) %> giờ</dd>
+                </div>
+                <div class="pay-row">
+                  <dt>Tổng lương</dt>
+                  <dd><%= fmt.formatNumber(payslip.luongTheoGioLam) %></dd>
+                </div>
+                <div class="pay-row">
+                  <dt>Hệ số lương (Ca đặc biệt / lễ tết)</dt>
+                  <dd><%= payslip.heSoLabel %></dd>
+                </div>
+                <div class="pay-row">
+                  <dt>Phạt</dt>
+                  <dd><%= fmt.formatNumber(payslip.tienPhat) %></dd>
+                </div>
+                <div class="pay-row">
+                  <dt>Ứng lương (Tạm ứng trong kỳ)</dt>
+                  <dd><%= fmt.formatNumber(payslip.tienUng) %></dd>
+                </div>
+                <% if (payslip.chenhLech !== 0) { %>
+                  <div class="pay-row">
+                    <dt>Chênh lệch kết chuyển</dt>
+                    <dd><%= fmt.formatNumber(payslip.chenhLech) %></dd>
+                  </div>
+                <% } %>
+                <div class="pay-row pay-row--total">
+                  <dt>THỰC NHẬN:</dt>
+                  <dd><%= fmt.formatCurrency(payslip.thucNhan) %></dd>
+                </div>
+              </dl>
+
+              <% if (details.length) { %>
+                <details class="pay-detail">
+                  <summary>Chi tiết theo ca làm (<%= details.length %> ca)</summary>
+                  <div class="table-wrap u-mt-4">
+                    <table class="table table--compact">
+                      <thead>
+                        <tr>
+                          <th>Ngày</th>
+                          <th>Ca làm</th>
+                          <th>Giờ vào</th>
+                          <th>Giờ ra</th>
+                          <th class="table__num">Số giờ</th>
+                          <th class="table__num">Hệ số</th>
+                          <th class="table__num">Thành tiền</th>
+                          <th class="table__num">Phạt</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% details.forEach(function (row) { %>
+                          <tr>
+                            <td class="u-nowrap"><%= row.ngay %></td>
+                            <td class="u-nowrap"><%= row.tenCa %></td>
+                            <td class="u-nowrap"><%= row.gioVao %></td>
+                            <td class="u-nowrap"><%= row.gioRa %></td>
+                            <td class="table__num"><%= fmt.formatHours(row.soGio) %></td>
+                            <td class="table__num"><%= fmt.formatCoefficient(row.heSo) %></td>
+                            <td class="table__num"><%= fmt.formatNumber(row.thanhTien) %></td>
+                            <td class="table__num"><%= fmt.formatNumber(row.phatDiTre + row.phatBoCa) %></td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+                </details>
+              <% } %>
+            </div>
+          </section>
+
+          <!-- ---------------------------------------------------------- -->
+          <!-- Báo lỗi (hộp thoại) / Xác nhận                             -->
+          <!-- ---------------------------------------------------------- -->
+          <% if (showReport) { %>
+            <div class="modal-overlay" data-modal>
+              <div class="modal-card modal-card--form" role="dialog" aria-modal="true"
+                   aria-label="Báo lỗi phiếu lương" tabindex="-1">
+                <form method="post" action="/nhan-vien/phieu-luong/bao-loi" novalidate data-validate-form>
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="maBL" value="<%= payslip.maBL %>">
+
+                  <div class="form-group">
+                    <label class="form-label" for="feedbackReason">Lý do</label>
+                    <input class="form-input <%= fieldErrors.lyDo ? 'is-invalid' : '' %>"
+                           type="text" id="feedbackReason" name="lyDo"
+                           data-required="Vui lòng nhập lý do.">
+                    <% if (fieldErrors.lyDo) { %>
+                      <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.lyDo %></p>
+                    <% } %>
+                  </div>
+
+                  <div class="modal__actions">
+                    <button type="submit" class="btn">Gửi</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          <% } %>
+
+          <% if (feedbacks.length) { %>
+            <section class="card u-mt-6">
+              <div class="card__header">
+                <h2 class="card__title">Phản hồi đã gửi</h2>
+              </div>
+              <div class="table-wrap">
+                <table class="table table--compact">
+                  <thead>
+                    <tr>
+                      <th>Mã</th>
+                      <th>Ngày gửi</th>
+                      <th>Lý do</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% feedbacks.forEach(function (item) { %>
+                      <tr>
+                        <td class="u-nowrap"><%= item.ma %></td>
+                        <td class="u-nowrap"><%= item.ngayGui %></td>
+                        <td><%= item.lyDo %></td>
+                        <td>
+                          <span class="badge <%= item.trangThai === 'Đã xử lý' ? 'badge--success' : 'badge--warning' %>">
+                            <%= item.trangThai %>
+                          </span>
+                        </td>
+                      </tr>
+                    <% }); %>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          <% } %>
+
+          <div class="page-actions">
+            <a class="btn btn--warn" href="/nhan-vien/phieu-luong?ky=<%= payslip.maBL %>&amp;bao-loi=1">Báo lỗi</a>
+            <form method="post" action="/nhan-vien/phieu-luong/xac-nhan">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="maBL" value="<%= payslip.maBL %>">
+              <button type="submit" class="btn">Xác nhận</button>
+            </form>
+          </div>
+        <% } %>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

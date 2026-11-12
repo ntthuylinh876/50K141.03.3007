@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#A1745F">
+  <title><%= pageTitle ? pageTitle + ' · ' : '' %><%= appName %> COFFEE</title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/tokens.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+  <% if (pageStyles) { %><link rel="stylesheet" href="<%= pageStyles %>"><% } %>
+</head>
+<body class="<%= bodyClass %>">
+<%- include('icons') %>
+
+<% if (flash && flash.length) { %>
+  <% var first = flash[0]; %>
+  <% var isSuccess = first.type === 'success'; %>
+  <div class="modal-overlay" data-modal>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-live="assertive" tabindex="-1">
+      <div class="modal-card__icon <%= isSuccess ? 'modal-card__icon--success' : '' %>">
+        <svg aria-hidden="true"><use href="#i-<%= isSuccess ? 'check' : (first.type === 'error' && first.message === 'Kết nối sai Wifi' ? 'wifi-off' : 'alert') %>"></use></svg>
+      </div>
+      <p class="modal-card__message"><%= first.message %></p>
+    </div>
+  </div>
+<% } %>

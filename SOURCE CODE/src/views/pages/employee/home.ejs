@@ -1,0 +1,103 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <% var shift = current || null; %>
+
+      <div class="att-grid">
+        <!-- ---------------------------------------------------------- -->
+        <!-- Chấm công (UC02)                                           -->
+        <!-- ---------------------------------------------------------- -->
+        <section class="att-card">
+          <h2 class="att-card__head">
+            <svg aria-hidden="true"><use href="#i-calendar"></use></svg>
+            Chấm công hôm nay
+          </h2>
+
+          <p class="att-card__shift">
+            <svg aria-hidden="true"><use href="#i-cup"></use></svg>
+            <%= shift ? shift.tenCa : 'Không có ca' %>
+          </p>
+
+          <p class="att-card__time"><%= shift ? shift.gioBatDau : '--:--' %></p>
+
+          <form method="post" action="/nhan-vien/cham-cong/vao">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="att-card__btn att-card__btn--primary" <%= canCheckIn ? '' : 'disabled' %>>
+              Chấm công
+            </button>
+          </form>
+        </section>
+
+        <!-- ---------------------------------------------------------- -->
+        <!-- Check out (UC03)                                           -->
+        <!-- ---------------------------------------------------------- -->
+        <section class="att-card">
+          <h2 class="att-card__head">
+            <svg aria-hidden="true"><use href="#i-logout"></use></svg>
+            Check out
+          </h2>
+
+          <p class="att-card__shift">
+            <svg aria-hidden="true"><use href="#i-cup"></use></svg>
+            <%= shift ? shift.tenCa : 'Không có ca' %>
+          </p>
+
+          <p class="att-card__time"><%= shift ? shift.gioKetThuc : '--:--' %></p>
+
+          <form method="post" action="/nhan-vien/cham-cong/ra">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="att-card__btn att-card__btn--light" <%= canCheckOut ? '' : 'disabled' %>>
+              Check Out
+            </button>
+          </form>
+        </section>
+      </div>
+
+      <!-- Lối tắt sang hai chức năng liên quan -->
+      <div class="att-shortcuts">
+        <a class="att-shortcut" href="/nhan-vien/cham-cong-bo-sung">
+          <span class="att-shortcut__badge" aria-hidden="true">
+            <svg><use href="#i-clock"></use></svg>
+          </span>
+          Chấm công bổ sung
+        </a>
+        <a class="att-shortcut" href="/nhan-vien/dang-ky-ca-lam">
+          <span class="att-shortcut__badge" aria-hidden="true">
+            <svg><use href="#i-clock"></use></svg>
+          </span>
+          Đăng ký ca làm
+        </a>
+      </div>
+
+      <!-- ------------------------------------------------------------ -->
+      <!-- Lịch làm việc tuần này (UC07)                                 -->
+      <!-- ------------------------------------------------------------ -->
+      <section class="week-card">
+        <div class="week-card__head">
+          <svg aria-hidden="true"><use href="#i-calendar"></use></svg>
+          <h2 class="week-card__title">Lịch làm việc</h2>
+        </div>
+
+        <div class="week-grid" tabindex="0" role="group" aria-label="Lịch làm việc trong tuần, vuốt ngang để xem thêm">
+          <% week.forEach(function (day) { %>
+            <div class="week-day <%= day.isToday ? 'is-today' : '' %> <%= day.shifts.length ? '' : 'week-day--off' %>">
+              <p class="week-day__label"><%= day.label %></p>
+              <p class="week-day__date"><%= day.dateVN %></p>
+              <span class="week-day__shift">
+                <%= day.shifts.length ? day.shifts[0].tenCa : '-' %>
+              </span>
+            </div>
+          <% }); %>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

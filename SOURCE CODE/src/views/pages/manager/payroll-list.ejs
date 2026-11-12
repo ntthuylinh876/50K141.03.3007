@@ -1,0 +1,49 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý lương</span>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Bảng lương</span>
+      </nav>
+
+      <div class="page-head">
+        <h1 class="page-head__title">Bảng lương</h1>
+      </div>
+
+      <% if (isEmpty) { %>
+        <div class="empty-state">
+          <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
+          <p class="empty-state__title"><%= emptyMessage %></p>
+        </div>
+      <% } else { %>
+        <div class="period-list">
+          <div class="period-list__head" aria-hidden="true">
+            <span>Kỳ lương</span>
+            <span>Ngày bắt đầu – kết thúc</span>
+            <span>Chi trả</span>
+          </div>
+
+          <% periods.forEach(function (item) { %>
+            <a class="period-row <%= item.isCurrent ? 'is-current' : '' %>"
+               href="<%= basePath %>/luong/bang-luong/<%= item.maBL %>">
+              <span class="u-strong"><%= item.label %></span>
+              <span><%= item.rangeLabel %></span>
+              <span><%= item.payLabel %></span>
+            </a>
+          <% }); %>
+        </div>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

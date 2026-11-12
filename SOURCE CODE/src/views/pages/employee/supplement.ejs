@@ -1,0 +1,144 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="/nhan-vien/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Chấm công bổ sung</span>
+      </nav>
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-head__title">Chấm công bổ sung</h1>
+        </div>
+      </div>
+
+      <% if (error) { %>
+        <p class="form-alert" role="alert">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-alert"></use></svg>
+          <%= error %>
+        </p>
+      <% } %>
+
+      <div class="card">
+        <div class="card__body">
+          <h2 class="section-title">Thông tin ca làm</h2>
+
+          <% if (shifts.length === 0) { %>
+            <div class="empty-state">
+              <svg aria-hidden="true"><use href="#i-clock"></use></svg>
+              <p class="empty-state__title">Chưa có ca làm nào để bổ sung</p>
+              <p class="empty-state__text">Bạn chưa có ca làm việc nào trong 21 ngày gần đây.</p>
+            </div>
+          <% } else { %>
+            <form method="post" action="/nhan-vien/cham-cong-bo-sung" novalidate data-validate-form>
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+              <div class="form-group">
+                <label class="form-label" for="maLich">Ca làm <span class="req">*</span></label>
+                <select class="form-select <%= fieldErrors.maLich ? 'is-invalid' : '' %>"
+                        id="maLich" name="maLich"
+                        data-fill-start="#gioVao"
+                        data-required="Vui lòng chọn ca làm.">
+                  <option value="">-- Chọn ca làm --</option>
+                  <% shifts.forEach(function (shift) { %>
+                    <option value="<%= shift.maLich %>"
+                            data-start="<%= shift.gioBatDau %>"
+                            <%= form.maLich === shift.maLich ? 'selected' : '' %>>
+                      <%= shift.label %><%= shift.trangThai ? ' · ' + shift.trangThai : '' %>
+                    </option>
+                  <% }); %>
+                </select>
+                <% if (fieldErrors.maLich) { %>
+                  <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.maLich %></p>
+                <% } %>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label" for="gioVao">Giờ vào <span class="req">*</span></label>
+                  <input class="form-input" type="text" id="gioVao" name="gioVao"
+                         value="<%= form.gioVao || '' %>" placeholder="--:--" readonly>
+                  <p class="form-hint">Giờ vào lấy theo ca làm đã chọn.</p>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="gioRa">Giờ ra <span class="req">*</span></label>
+                  <input class="form-input <%= fieldErrors.gioRa ? 'is-invalid' : '' %>"
+                         type="time" id="gioRa" name="gioRa"
+                         value="<%= form.gioRa || '' %>"
+                         data-required="Vui lòng nhập giờ ra.">
+                  <% if (fieldErrors.gioRa) { %>
+                    <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.gioRa %></p>
+                  <% } %>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="lyDo">Lý do <span class="req">*</span></label>
+                <textarea class="form-textarea <%= fieldErrors.lyDo ? 'is-invalid' : '' %>"
+                          id="lyDo" name="lyDo" rows="4"
+                          placeholder="Nhập lý do chấm công bổ sung."
+                          data-required="Vui lòng bổ sung lý do."><%= form.lyDo || '' %></textarea>
+                <% if (fieldErrors.lyDo) { %>
+                  <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.lyDo %></p>
+                <% } %>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn">
+                  <svg aria-hidden="true"><use href="#i-send"></use></svg>
+                  Gửi
+                </button>
+              </div>
+            </form>
+          <% } %>
+        </div>
+      </div>
+
+      <% if (history.length) { %>
+        <section class="card u-mt-6">
+          <div class="card__header">
+            <h2 class="card__title">Yêu cầu đã gửi</h2>
+          </div>
+          <div class="table-wrap">
+            <table class="table table--compact">
+              <thead>
+                <tr>
+                  <th>Mã</th>
+                  <th>Ngày gửi</th>
+                  <th>Ca làm</th>
+                  <th>Lý do</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% history.forEach(function (item) { %>
+                  <tr>
+                    <td class="u-nowrap"><%= item.maCCBS %></td>
+                    <td class="u-nowrap"><%= item.ngayGui %></td>
+                    <td class="u-nowrap"><%= item.ngayLam %> · <%= item.tenCa %></td>
+                    <td><%= item.lyDo %></td>
+                    <td>
+                      <span class="badge <%= item.trangThai === 'Đã duyệt' ? 'badge--success' : (item.trangThai === 'Từ chối' ? 'badge--danger' : 'badge--warning') %>">
+                        <%= item.trangThai %>
+                      </span>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

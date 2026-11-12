@@ -1,0 +1,133 @@
+<%- include('../../partials/head') %>
+
+<%
+  var backHref = String(detail.backHref || '').replace('/quan-ly', basePath);
+  var approveUrl = String(detail.approveUrl || '').replace('/quan-ly', basePath);
+  var rejectUrl = String(detail.rejectUrl || '').replace('/quan-ly', basePath);
+  var isSupplement = detail.kind === 'supplement';
+  var isLeave = detail.kind === 'leave';
+  var isSwap = detail.kind === 'swap';
+  var isCover = detail.kind === 'cover';
+  var parentLabel = isSupplement ? 'Quản lý chấm công' : 'Duyệt đơn đăng ký';
+  var parentHref = isSupplement
+    ? basePath + '/cham-cong/duyet-bo-sung'
+    : basePath + (isCover ? '/duyet-don/lam-thay' : '/duyet-don/xin-nghi-doi-ca');
+  var currentLabel = isSupplement
+    ? 'Duyệt chấm công bổ sung'
+    : (isCover ? 'Đơn xin làm thay' : 'Đơn xin nghỉ/ đổi ca');
+%>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <a href="<%= parentHref %>"><%= parentLabel %></a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current"><%= currentLabel %></span>
+      </nav>
+
+      <section class="detail-card">
+        <div class="detail-card__head">
+          <a class="detail-card__back" href="<%= backHref %>" aria-label="Quay lại danh sách">
+            <svg width="24" height="24" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+          </a>
+          <h1 class="detail-card__title"><%= detail.title %></h1>
+        </div>
+
+        <% if (isSupplement) { %>
+          <div class="detail-facts">
+            <div class="detail-fact">
+              <span class="detail-fact__label">Nhân viên</span>
+              <p class="detail-fact__value"><%= detail.hoTen %></p>
+            </div>
+            <div class="detail-fact">
+              <span class="detail-fact__label">Ngày</span>
+              <p class="detail-fact__value"><%= detail.ngayLam %></p>
+            </div>
+            <div class="detail-fact">
+              <span class="detail-fact__label">Ca làm</span>
+              <p class="detail-fact__value"><%= detail.tenCa %></p>
+            </div>
+          </div>
+
+          <div class="detail-field u-mt-6">
+            <span class="detail-field__label">Lý do <span class="req">*</span></span>
+            <div class="detail-field__box"><%= detail.lyDo %></div>
+          </div>
+        <% } else { %>
+          <p class="detail-person">
+            <svg width="28" height="28" aria-hidden="true"><use href="#i-user"></use></svg>
+            <span>Người gửi: <strong><%= detail.hoTen %></strong></span>
+          </p>
+
+          <div class="detail-panel">
+            <% if (isLeave) { %>
+              <div class="detail-field">
+                <span class="detail-field__label">Ca xin nghỉ <span class="req">*</span></span>
+                <% detail.shifts.forEach(function (shift) { %>
+                  <div class="detail-field__box"><%= shift.label %></div>
+                <% }); %>
+              </div>
+            <% } %>
+
+            <% if (isSwap) { %>
+              <div class="detail-field">
+                <span class="detail-field__label">Ca muốn đổi <span class="req">*</span></span>
+                <div class="detail-field__box"><%= detail.shiftLabel %></div>
+              </div>
+              <div class="detail-field">
+                <span class="detail-field__label">Đổi với ca <span class="req">*</span></span>
+                <div class="detail-field__box"><%= detail.swapTarget %></div>
+                <p class="detail-field__hint">Đồng nghiệp nhận ca: <%= detail.swapTargetName %></p>
+              </div>
+            <% } %>
+
+            <% if (isCover) { %>
+              <div class="detail-field">
+                <span class="detail-field__label">Ca làm thay</span>
+                <div class="detail-field__box"><%= detail.shiftLabel %></div>
+              </div>
+            <% } %>
+
+            <div class="detail-field">
+              <span class="detail-field__label">Lý do <span class="req">*</span></span>
+              <div class="detail-field__box"><%= detail.lyDo %></div>
+            </div>
+          </div>
+
+          <div class="detail-actions">
+            <form method="post" action="<%= rejectUrl %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn--light" type="submit">Không Duyệt</button>
+            </form>
+            <form method="post" action="<%= approveUrl %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn" type="submit">Duyệt</button>
+            </form>
+          </div>
+        <% } %>
+      </section>
+
+      <% if (isSupplement) { %>
+        <div class="detail-actions">
+          <form method="post" action="<%= rejectUrl %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn btn--light" type="submit">Không Duyệt</button>
+          </form>
+          <form method="post" action="<%= approveUrl %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button class="btn" type="submit">Duyệt</button>
+          </form>
+        </div>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

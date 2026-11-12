@@ -1,0 +1,28 @@
+<%#
+  Danh sách đơn chờ duyệt dùng chung cho ba màn hình:
+   - Đơn xin nghỉ / đổi ca   (7.2.2.15)
+   - Đơn xin làm thay        (7.2.2.20)
+   - Duyệt chấm công bổ sung (7.2.2.25)
+  Tham số: rows, isEmpty, emptyMessage, hrefPrefix, basePath
+%>
+<% if (isEmpty) { %>
+  <div class="empty-state">
+    <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
+    <p class="empty-state__title"><%= emptyMessage %></p>
+  </div>
+<% } else { %>
+  <div class="request-list">
+    <% rows.forEach(function (row) { %>
+      <a class="request-item" href="<%= basePath %><%= hrefPrefix %>/<%= row.id %>">
+        <span class="request-item__person">
+          <svg width="24" height="24" aria-hidden="true"><use href="#i-user"></use></svg>
+          <span class="request-item__name"><%= row.hoTen %></span>
+        </span>
+        <span class="request-item__side">
+          <span class="request-item__status"><%= row.trangThai %></span>
+          <span class="request-item__time"><%= row.ngayGui %></span>
+        </span>
+      </a>
+    <% }); %>
+  </div>
+<% } %>

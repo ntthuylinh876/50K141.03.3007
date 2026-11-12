@@ -1,0 +1,39 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= homePath %>">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current"><%= screenTitle %></span>
+      </nav>
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-head__title"><%= screenTitle %></h1>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="empty-state">
+          <svg aria-hidden="true"><use href="#i-coffee-bean"></use></svg>
+          <p class="empty-state__title">Màn hình đang được hoàn thiện</p>
+          <p class="empty-state__text">
+            Chức năng <strong><%= screenTitle %></strong> sẽ được xây dựng ở <strong><%= phase %></strong>.
+          </p>
+          <a class="btn btn--secondary empty-state__action" href="<%= homePath %>">
+            <svg aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+            Về trang chủ
+          </a>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

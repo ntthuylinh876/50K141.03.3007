@@ -1,0 +1,105 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý lương</span>
+        <span class="breadcrumb__sep">›</span>
+        <a href="<%= basePath %>/luong/cap-nhat/<%= line.maPL %>">Chi tiết phiếu lương</a>
+      </nav>
+
+      <section class="data-card">
+        <div class="data-card__head">
+          <div>
+            <h1 class="data-card__title">Chỉnh sửa</h1>
+            <p class="data-card__subtitle"><%= line.hoTen %> · <%= line.ngay %></p>
+          </div>
+        </div>
+
+        <form method="post"
+              action="<%= basePath %>/luong/cap-nhat/<%= line.maPL %>/chinh-sua/<%= line.maCTL %>"
+              novalidate data-validate-form>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+          <% if (error) { %>
+            <p class="form-alert" role="alert">
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-alert"></use></svg>
+              <%= error %>
+            </p>
+          <% } %>
+
+          <div class="detail-panel">
+            <h2 class="detail-panel__title">Dữ liệu sửa</h2>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="editGioVao">Giờ vào</label>
+                <input class="form-input <%= fieldErrors.gioVao ? 'is-invalid' : '' %>"
+                       type="time" id="editGioVao" name="gioVao" value="<%= form.gioVao %>">
+                <% if (fieldErrors.gioVao) { %>
+                  <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.gioVao %></p>
+                <% } %>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="editGioRa">Giờ ra</label>
+                <input class="form-input <%= fieldErrors.gioRa ? 'is-invalid' : '' %>"
+                       type="time" id="editGioRa" name="gioRa" value="<%= form.gioRa %>">
+                <% if (fieldErrors.gioRa) { %>
+                  <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.gioRa %></p>
+                <% } %>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="editPhat">Phạt</label>
+                <input class="form-input <%= fieldErrors.phat ? 'is-invalid' : '' %>"
+                       type="number" min="0" step="1000" id="editPhat" name="phat" value="<%= form.phat %>">
+                <% if (fieldErrors.phat) { %>
+                  <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.phat %></p>
+                <% } %>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="editUng">Ứng lương</label>
+                <input class="form-input <%= fieldErrors.ung ? 'is-invalid' : '' %>"
+                       type="number" min="0" step="1000" id="editUng" name="ung" value="<%= form.ung %>">
+                <% if (fieldErrors.ung) { %>
+                  <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.ung %></p>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group u-mt-5">
+            <label class="form-label" for="editLyDo">Lý do chỉnh sửa</label>
+            <textarea class="form-textarea" id="editLyDo" name="lyDo" rows="4"
+                      placeholder="Nhập lý do chỉnh sửa."><%= form.lyDo %></textarea>
+          </div>
+
+          <div class="form-actions form-actions--between">
+            <a class="btn btn--light"
+               href="<%= basePath %>/luong/cap-nhat/<%= line.maPL %>/doi-chieu/<%= line.maCTL %>">
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+              Quay lại
+            </a>
+            <button class="btn" type="submit">
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-send"></use></svg>
+              Gửi đề xuất
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

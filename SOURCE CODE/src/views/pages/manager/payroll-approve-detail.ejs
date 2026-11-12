@@ -1,0 +1,126 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý lương</span>
+        <span class="breadcrumb__sep">›</span>
+        <a href="<%= basePath %>/luong/duyet">Duyệt lương</a>
+      </nav>
+
+      <div class="page-head">
+        <h1 class="page-head__title">Duyệt bảng lương</h1>
+        <p class="page-head__meta">
+          <strong><%= period.label %></strong> · <%= period.rangeLabel %>
+        </p>
+      </div>
+
+      <section class="data-card">
+        <div class="data-card__head">
+          <h2 class="data-card__title">Chi tiết · <%= slip.hoTen %></h2>
+
+          <div class="data-card__tools">
+            <span class="data-card__note">Đơn vị: VNĐ</span>
+            <% if (editable) { %>
+              <button type="button" class="btn btn--icon" data-penalty-toggle
+                      aria-label="Chỉnh sửa tiền phạt" aria-pressed="false">
+                <svg aria-hidden="true"><use href="#i-edit"></use></svg>
+              </button>
+            <% } %>
+          </div>
+        </div>
+
+        <form method="post"
+              action="<%= basePath %>/luong/duyet/<%= period.maBL %>/<%= slip.maNV %>"
+              data-penalty-form>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="maPL" value="<%= slip.maPL %>">
+
+          <div class="table-wrap">
+            <table class="table table--rows">
+              <thead>
+                <tr>
+                  <th scope="col">Ngày</th>
+                  <th scope="col">Ca làm</th>
+                  <th scope="col">Số giờ làm</th>
+                  <th scope="col">Hệ số lương</th>
+                  <th scope="col">Đơn giá/giờ</th>
+                  <th scope="col">Phạt</th>
+                  <th scope="col">Ứng lương</th>
+                  <th scope="col">Thực nhận</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.forEach(function (row) { %>
+                  <tr>
+                    <td class="u-nowrap"><%= row.ngay %></td>
+                    <td><%= row.tenCa %></td>
+                    <td><%= row.soGioLabel %></td>
+                    <td>×<%= row.heSoLabel %></td>
+                    <td><%= row.donGiaLabel %></td>
+                    <td>
+                      <span data-penalty-view><%= row.phatLabel %></span>
+                      <input class="table-input" type="number" min="0" step="1000"
+                             name="phat_<%= row.maCTL %>"
+                             value="<%= row.phat %>"
+                             aria-label="Tiền phạt ngày <%= row.ngay %>"
+                             data-penalty-input>
+                    </td>
+                    <td><%= row.ungLabel %></td>
+                    <td class="u-strong" data-line-total
+                        data-base="<%= row.soGio * row.donGia * row.heSo %>"><%= row.thucNhanLabel %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pager">
+            <% if (hasPrev) { %>
+              <a class="pager__btn"
+                 href="<%= basePath %>/luong/duyet/<%= period.maBL %>/<%= slip.maNV %>?trang=<%= page - 1 %>"
+                 aria-label="Trang trước">‹</a>
+            <% } else { %>
+              <span class="pager__btn is-disabled" aria-hidden="true">‹</span>
+            <% } %>
+
+            <span class="pager__label"><%= page %> / <%= totalPages %></span>
+
+            <% if (hasNext) { %>
+              <a class="pager__btn"
+                 href="<%= basePath %>/luong/duyet/<%= period.maBL %>/<%= slip.maNV %>?trang=<%= page + 1 %>"
+                 aria-label="Trang sau">›</a>
+            <% } else { %>
+              <span class="pager__btn is-disabled" aria-hidden="true">›</span>
+            <% } %>
+          </div>
+
+          <div class="edit-bar" data-penalty-bar hidden>
+            <div class="edit-bar__field">
+              <label class="form-label" for="payrollEditReason">Lý do chỉnh sửa</label>
+              <input class="form-input" type="text" id="payrollEditReason" name="lyDo"
+                     placeholder="Nhập lý do chỉnh sửa.">
+            </div>
+            <button class="btn" type="submit">Lưu</button>
+          </div>
+        </form>
+      </section>
+
+      <div class="form-actions form-actions--start">
+        <a class="btn btn--light" href="<%= basePath %>/luong/duyet">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+          Quay lại
+        </a>
+      </div>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot', { pageScripts: ['/js/manager.js'] }) %>

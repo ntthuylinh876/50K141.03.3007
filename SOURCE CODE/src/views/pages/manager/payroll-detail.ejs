@@ -1,0 +1,148 @@
+<%- include('../../partials/head') %>
+
+<%
+  // Cùng một view phục vụ hai màn hình:
+  //  - Tổng hợp lương nhân viên của kỳ (không có `slip`)
+  //  - Chi tiết lương theo từng ca của một nhân viên (có `slip`)
+  var isSlip = typeof slip !== 'undefined' && slip;
+%>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý lương</span>
+        <span class="breadcrumb__sep">›</span>
+        <a href="<%= basePath %>/luong/bang-luong">Bảng lương</a>
+      </nav>
+
+      <div class="page-head">
+        <h1 class="page-head__title">Bảng lương</h1>
+
+        <form class="select-pill">
+          <label class="u-sr-only" for="periodSelect">Kỳ lương</label>
+          <select class="select-pill__select" id="periodSelect" data-goto-select>
+            <% periods.forEach(function (item) { %>
+              <option value="<%= basePath %>/luong/bang-luong/<%= item.maBL %>"
+                      <%= item.maBL === period.maBL ? 'selected' : '' %>>
+                <%= item.label %>
+              </option>
+            <% }); %>
+          </select>
+          <svg class="select-pill__chevron" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+        </form>
+      </div>
+
+      <% if (isEmpty) { %>
+        <div class="empty-state">
+          <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
+          <p class="empty-state__title">Chưa có dữ liệu lương cho kỳ này!</p>
+        </div>
+      <% } else if (!isSlip) { %>
+        <section class="data-card">
+          <div class="data-card__head">
+            <h2 class="data-card__title">Tổng hợp lương nhân viên</h2>
+            <span class="data-card__note">Đơn vị: VNĐ</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table table--rows">
+              <thead>
+                <tr>
+                  <th scope="col">Nhân viên</th>
+                  <th scope="col">Tổng giờ làm</th>
+                  <th scope="col">Lương giờ làm</th>
+                  <th scope="col">Phạt</th>
+                  <th scope="col">Ứng lương</th>
+                  <th scope="col">Thực nhận</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.forEach(function (row, index) { %>
+                  <tr class="table__row--link <%= index === 0 ? 'is-highlight' : '' %>"
+                      data-row-href="<%= basePath %>/luong/bang-luong/<%= period.maBL %>/<%= row.maNV %>">
+                    <td>
+                      <a class="row-link u-strong"
+                         href="<%= basePath %>/luong/bang-luong/<%= period.maBL %>/<%= row.maNV %>"><%= row.hoTen %></a>
+                    </td>
+                    <td><%= row.tongGioLabel %></td>
+                    <td><%= row.luongLabel %></td>
+                    <td><%= row.phatLabel %></td>
+                    <td><%= row.ungLabel %></td>
+                    <td class="u-strong"><%= row.thucNhanLabel %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% } else { %>
+        <section class="data-card">
+          <div class="data-card__head">
+            <h2 class="data-card__title">Chi tiết · <%= slip.hoTen %></h2>
+            <span class="data-card__note">Đơn vị: VNĐ</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table table--rows">
+              <thead>
+                <tr>
+                  <th scope="col">Ngày</th>
+                  <th scope="col">Ca làm</th>
+                  <th scope="col">Số giờ làm</th>
+                  <th scope="col">Hệ số lương</th>
+                  <th scope="col">Đơn giá/giờ</th>
+                  <th scope="col">Phạt</th>
+                  <th scope="col">Ứng lương</th>
+                  <th scope="col">Thực nhận</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.forEach(function (row) { %>
+                  <tr>
+                    <td class="u-nowrap"><%= row.ngay %></td>
+                    <td><%= row.tenCa %></td>
+                    <td><%= row.soGioLabel %></td>
+                    <td>×<%= row.heSoLabel %></td>
+                    <td><%= row.donGiaLabel %></td>
+                    <td><%= row.phatLabel %></td>
+                    <td><%= row.ungLabel %></td>
+                    <td class="u-strong"><%= row.thucNhanLabel %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="pager">
+            <% if (hasPrev) { %>
+              <a class="pager__btn"
+                 href="<%= basePath %>/luong/bang-luong/<%= period.maBL %>/<%= slip.maNV %>?trang=<%= page - 1 %>"
+                 aria-label="Trang trước">‹</a>
+            <% } else { %>
+              <span class="pager__btn is-disabled" aria-hidden="true">‹</span>
+            <% } %>
+
+            <span class="pager__label"><%= page %> / <%= totalPages %></span>
+
+            <% if (hasNext) { %>
+              <a class="pager__btn"
+                 href="<%= basePath %>/luong/bang-luong/<%= period.maBL %>/<%= slip.maNV %>?trang=<%= page + 1 %>"
+                 aria-label="Trang sau">›</a>
+            <% } else { %>
+              <span class="pager__btn is-disabled" aria-hidden="true">›</span>
+            <% } %>
+          </div>
+        </section>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot', { pageScripts: ['/js/manager.js'] }) %>

@@ -1,0 +1,58 @@
+<aside class="sidebar" id="sidebar" aria-label="Menu chính">
+  <div class="sidebar__top">
+    <a class="sidebar__brand" href="<%= homePath %>">
+      <svg class="sidebar__brand-icon" aria-hidden="true"><use href="#i-cup"></use></svg>
+      <span class="sidebar__brand-text">
+        <span class="sidebar__brand-name">NICK &amp; JUICE</span>
+        <span class="sidebar__brand-sub">COFFEE</span>
+      </span>
+    </a>
+
+    <button type="button" class="sidebar__close" data-nav-close aria-label="Đóng menu">
+      <svg aria-hidden="true"><use href="#i-x"></use></svg>
+    </button>
+  </div>
+
+  <nav class="sidebar__nav" aria-label="Điều hướng chính">
+    <% menu.forEach(function (item) { %>
+      <% if (!item.children) { %>
+        <a class="nav-item <%= item.isActive ? 'is-active' : '' %>" href="<%= item.href %>">
+          <svg aria-hidden="true"><use href="#i-<%= item.icon %>"></use></svg>
+          <span><%= item.label %></span>
+        </a>
+      <% } else { %>
+        <button type="button"
+                class="nav-item <%= item.isActive ? 'is-active' : '' %>"
+                data-nav-toggle
+                aria-expanded="<%= item.isOpen ? 'true' : 'false' %>">
+          <svg aria-hidden="true"><use href="#i-<%= item.icon %>"></use></svg>
+          <span><%= item.label %></span>
+          <svg class="nav-item__chevron nav-item__chevron--right" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+        </button>
+        <div class="nav-sub <%= item.isOpen ? 'is-open' : '' %>">
+          <% item.children.forEach(function (child) { %>
+            <a class="nav-item <%= child.isActive ? 'is-active' : '' %>" href="<%= child.href %>">
+              <%= child.label %>
+            </a>
+          <% }); %>
+        </div>
+      <% } %>
+    <% }); %>
+  </nav>
+
+  <div class="sidebar__footer">
+    <form method="post" action="/dang-xuat">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="sidebar__logout">
+        <svg aria-hidden="true"><use href="#i-logout"></use></svg>
+        <span>Đăng xuất</span>
+      </button>
+    </form>
+    <div class="sidebar__bean" aria-hidden="true">
+      <svg><use href="#i-bean-fill"></use></svg>
+      <svg style="width:26px;height:26px"><use href="#i-bean-fill"></use></svg>
+    </div>
+  </div>
+</aside>
+
+<div class="nav-scrim" data-nav-close aria-hidden="true"></div>

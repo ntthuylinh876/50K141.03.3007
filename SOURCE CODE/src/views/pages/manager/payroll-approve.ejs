@@ -1,0 +1,112 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý lương</span>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Duyệt lương</span>
+      </nav>
+
+      <div class="page-head">
+        <h1 class="page-head__title">Duyệt bảng lương</h1>
+        <% if (period) { %>
+          <p class="page-head__meta">
+            <strong><%= period.label %></strong> · <%= period.rangeLabel %>
+          </p>
+        <% } %>
+      </div>
+
+      <% if (!period) { %>
+        <div class="empty-state">
+          <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
+          <p class="empty-state__title">Chưa có bảng lương nào!</p>
+        </div>
+      <% } else { %>
+        <section class="data-card">
+          <div class="data-card__head">
+            <h2 class="data-card__title">Tổng hợp lương nhân viên</h2>
+            <span class="data-card__note">Đơn vị: VNĐ</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table table--rows">
+              <thead>
+                <tr>
+                  <th scope="col">Nhân viên</th>
+                  <th scope="col">Tổng giờ làm</th>
+                  <th scope="col">Lương giờ làm</th>
+                  <th scope="col">Phạt</th>
+                  <th scope="col">Ứng lương</th>
+                  <th scope="col">Thực nhận</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% rows.forEach(function (row, index) { %>
+                  <tr class="table__row--link <%= index === 0 ? 'is-highlight' : '' %>"
+                      data-row-href="<%= basePath %>/luong/duyet/<%= period.maBL %>/<%= row.maNV %>">
+                    <td>
+                      <a class="row-link u-strong"
+                         href="<%= basePath %>/luong/duyet/<%= period.maBL %>/<%= row.maNV %>"><%= row.hoTen %></a>
+                    </td>
+                    <td><%= row.tongGioLabel %></td>
+                    <td><%= row.luongLabel %></td>
+                    <td><%= row.phatLabel %></td>
+                    <td><%= row.ungLabel %></td>
+                    <td class="u-strong"><%= row.thucNhanLabel %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div class="approve-actions">
+          <% if (canApprove) { %>
+            <button type="button" class="btn btn--secondary" data-open-modal="#rejectPayrollModal">
+              Không duyệt
+            </button>
+            <form method="post" action="<%= basePath %>/luong/duyet/<%= period.maBL %>/duyet">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn" type="submit">Duyệt</button>
+            </form>
+          <% } else { %>
+            <span class="badge badge--info"><%= period.tinhTrang %></span>
+          <% } %>
+        </div>
+
+        <% if (canApprove) { %>
+          <div class="modal-overlay" data-modal id="rejectPayrollModal" hidden>
+            <div class="modal-card modal-card--form" role="dialog" aria-modal="true"
+                 aria-label="Lý do không duyệt bảng lương" tabindex="-1">
+              <form method="post"
+                    action="<%= basePath %>/luong/duyet/<%= period.maBL %>/khong-duyet"
+                    novalidate data-validate-form>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <div class="form-group">
+                  <label class="form-label" for="rejectPayrollReason">Lý do</label>
+                  <input class="form-input" type="text" id="rejectPayrollReason" name="lyDo"
+                         data-required="Vui lòng nhập lý do.">
+                </div>
+
+                <div class="modal__actions">
+                  <button type="submit" class="btn">Gửi</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        <% } %>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot', { pageScripts: ['/js/manager.js'] }) %>

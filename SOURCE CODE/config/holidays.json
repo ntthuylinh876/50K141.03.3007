@@ -1,0 +1,46 @@
+{
+  "_readme": [
+    "NGUỒN DUY NHẤT cho toàn bộ quy tắc liên quan đến ngày lễ (quyết định C9).",
+    "Dùng chung cho: (1) hệ số lương HeSoNgay trong công thức tính lương (BR-UC13.1-05),",
+    "(2) quy tắc định biên 2 nhân viên/ca vào ngày lễ (BR-UC5-02).",
+    "heSoLuong: 1 = ngày lễ nhưng hệ số lương bình thường; 2 = Quốc khánh 02/09;",
+    "3 = mùng 1, 2, 3 Tết Âm lịch. Các ngày KHÔNG có trong danh sách này có hệ số 1.",
+    "Ngày âm lịch được tra theo lịch Việt Nam; cập nhật khi sang năm mới."
+  ],
+  "timezone": "Asia/Ho_Chi_Minh",
+  "years": {
+    "2025": [
+      { "date": "2025-01-01", "name": "Tết Dương lịch", "heSoLuong": 1 },
+      { "date": "2025-01-28", "name": "Tết Nguyên đán — 30 Tết", "heSoLuong": 1 },
+      { "date": "2025-01-29", "name": "Tết Nguyên đán — Mùng 1", "heSoLuong": 3 },
+      { "date": "2025-01-30", "name": "Tết Nguyên đán — Mùng 2", "heSoLuong": 3 },
+      { "date": "2025-01-31", "name": "Tết Nguyên đán — Mùng 3", "heSoLuong": 3 },
+      { "date": "2025-04-07", "name": "Giỗ Tổ Hùng Vương", "heSoLuong": 1 },
+      { "date": "2025-04-30", "name": "Ngày Giải phóng miền Nam", "heSoLuong": 1 },
+      { "date": "2025-05-01", "name": "Ngày Quốc tế Lao động", "heSoLuong": 1 },
+      { "date": "2025-09-02", "name": "Quốc khánh", "heSoLuong": 2 }
+    ],
+    "2026": [
+      { "date": "2026-01-01", "name": "Tết Dương lịch", "heSoLuong": 1 },
+      { "date": "2026-02-16", "name": "Tết Nguyên đán — 30 Tết", "heSoLuong": 1 },
+      { "date": "2026-02-17", "name": "Tết Nguyên đán — Mùng 1", "heSoLuong": 3 },
+      { "date": "2026-02-18", "name": "Tết Nguyên đán — Mùng 2", "heSoLuong": 3 },
+      { "date": "2026-02-19", "name": "Tết Nguyên đán — Mùng 3", "heSoLuong": 3 },
+      { "date": "2026-04-26", "name": "Giỗ Tổ Hùng Vương", "heSoLuong": 1 },
+      { "date": "2026-04-30", "name": "Ngày Giải phóng miền Nam", "heSoLuong": 1 },
+      { "date": "2026-05-01", "name": "Ngày Quốc tế Lao động", "heSoLuong": 1 },
+      { "date": "2026-09-02", "name": "Quốc khánh", "heSoLuong": 2 }
+    ],
+    "2027": [
+      { "date": "2027-01-01", "name": "Tết Dương lịch", "heSoLuong": 1 },
+      { "date": "2027-02-05", "name": "Tết Nguyên đán — 30 Tết", "heSoLuong": 1 },
+      { "date": "2027-02-06", "name": "Tết Nguyên đán — Mùng 1", "heSoLuong": 3 },
+      { "date": "2027-02-07", "name": "Tết Nguyên đán — Mùng 2", "heSoLuong": 3 },
+      { "date": "2027-02-08", "name": "Tết Nguyên đán — Mùng 3", "heSoLuong": 3 },
+      { "date": "2027-04-16", "name": "Giỗ Tổ Hùng Vương", "heSoLuong": 1 },
+      { "date": "2027-04-30", "name": "Ngày Giải phóng miền Nam", "heSoLuong": 1 },
+      { "date": "2027-05-01", "name": "Ngày Quốc tế Lao động", "heSoLuong": 1 },
+      { "date": "2027-09-02", "name": "Quốc khánh", "heSoLuong": 2 }
+    ]
+  }
+}

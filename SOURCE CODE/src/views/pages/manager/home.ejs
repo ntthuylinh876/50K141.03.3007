@@ -1,0 +1,46 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <span class="breadcrumb__current">Trang chủ</span>
+      </nav>
+
+      <section class="home-welcome">
+        <h1 class="page-head__title home-welcome__title">Chào mừng bạn đã quay trở lại!</h1>
+        <p class="page-head__subtitle home-welcome__subtitle">
+          Quản lý lịch làm việc, theo dõi chấm công và xử lý bảng lương của quán tại đây.
+        </p>
+      </section>
+
+      <div class="u-grid-auto">
+        <a class="card home-card" href="/quan-ly/ca-lam/cap-nhat">
+          <span class="home-card__icon">
+            <svg width="24" height="24" aria-hidden="true"><use href="#i-calendar"></use></svg>
+          </span>
+          <h2 class="card__title">Cập nhật ca làm</h2>
+          <p class="u-text-muted home-card__text">Thêm hoặc gỡ nhân viên khỏi các ca trong tuần.</p>
+        </a>
+
+        <a class="card home-card" href="/quan-ly/ca-lam/danh-sach">
+          <span class="home-card__icon">
+            <svg width="24" height="24" aria-hidden="true"><use href="#i-users"></use></svg>
+          </span>
+          <h2 class="card__title">Xem danh sách ca làm</h2>
+          <p class="u-text-muted home-card__text">Tra cứu lịch làm việc theo thời gian và ca.</p>
+        </a>
+      </div>
+
+      <p class="u-text-muted home-note">
+        Các chức năng duyệt đơn, quản lý chấm công và quản lý lương nằm trong menu điều hướng.
+      </p>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

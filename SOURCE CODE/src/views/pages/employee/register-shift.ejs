@@ -1,0 +1,81 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="/nhan-vien/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Đăng ký ca làm</span>
+      </nav>
+
+      <div class="page-head">
+        <div>
+          <h1 class="page-head__title">Đăng ký ca làm</h1>
+        </div>
+      </div>
+
+      <section class="card">
+        <div class="card__body">
+          <h2 class="section-title">Tuần đăng ký</h2>
+          <p class="week-pill">
+            <svg aria-hidden="true"><use href="#i-calendar"></use></svg>
+            Tuần: <%= weekLabel %>
+          </p>
+        </div>
+      </section>
+
+      <h2 class="section-title section-title--page">Đăng ký lịch làm việc</h2>
+
+      <% if (error) { %>
+        <p class="form-alert" role="alert">
+          <svg width="16" height="16" aria-hidden="true"><use href="#i-alert"></use></svg>
+          <%= error %>
+        </p>
+      <% } %>
+
+      <form method="post" action="/nhan-vien/dang-ky-ca-lam" novalidate>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="reg-board">
+          <% board.forEach(function (day) { %>
+            <div class="reg-day <%= day.isWeekend ? 'reg-day--weekend' : '' %>">
+              <p class="reg-day__label"><%= day.label %></p>
+
+              <% day.cells.forEach(function (cell) { %>
+                <% var checked = selectedKeys.indexOf(cell.key) !== -1 || (selectedKeys.length === 0 && cell.selected); %>
+                <% if (cell.full && !checked) { %>
+                  <!-- Ô đã đủ nhân viên: bấm vào hiện thông báo (Đăng ký ca làm 4) -->
+                  <button type="button" class="shift-cell shift-cell--full"
+                          data-full-cell data-full-message="Đã có đủ số lượng nhân viên cho ca này!">
+                    <span class="shift-cell__name"><%= cell.tenCa %></span>
+                    <span class="shift-cell__time"><%= cell.gioBatDau %> - <%= cell.gioKetThuc %></span>
+                    <span class="shift-cell__flag">Đầy!</span>
+                  </button>
+                <% } else { %>
+                  <label class="shift-cell">
+                    <input type="checkbox" class="shift-cell__input" name="slots"
+                           value="<%= cell.key %>"
+                           <%= checked ? 'checked' : '' %>>
+                    <span class="shift-cell__name"><%= cell.tenCa %></span>
+                    <span class="shift-cell__time"><%= cell.gioBatDau %> - <%= cell.gioKetThuc %></span>
+                  </label>
+                <% } %>
+              <% }); %>
+            </div>
+          <% }); %>
+        </div>
+
+        <div class="form-actions form-actions--end">
+          <button type="submit" class="btn">Gửi đăng ký</button>
+        </div>
+      </form>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>
