@@ -18,6 +18,9 @@ const { nextMaLich } = require('../utils/id');
 const MSG_UPDATE_OK = 'Cập nhật ca làm thành công!';
 const MSG_SHIFT_PAST = 'Không thể cập nhật ca đã diễn ra';
 const MSG_NO_SCHEDULE = 'Chưa có lịch làm việc cho thời gian này!';
+const MSG_APPLY_OK = 'Đã áp dụng đăng ký ca làm!';
+const MSG_APPLY_EMPTY = 'Vui lòng chọn nhân viên đăng ký để áp dụng.';
+const MSG_APPLY_NONE = 'Không còn đăng ký nào cần áp dụng cho ca này.';
 
 /** Khoảng ngày hiển thị của một tuần: "09/11 – 15/11/2026". */
 function weekRangeLabel(weekStartISO) {
@@ -218,6 +221,29 @@ async function getShiftEditor(maCa, ngayISO) {
   const gioBatDau = dt.toHM(shift.GioBatDau);
   const gioKetThuc = dt.toHM(shift.GioKetThuc);
 
+  // Đăng ký ca của nhân viên (UC05) cho đúng ca + ngày này, trừ người đã có
+  // trong lịch chính thức. LichRanh lưu danh sách ngày ISO ngăn cách bởi dấu phẩy.
+  const registeredResult = await query(
+    `SELECT dk.MaDK, dk.MaNV, nv.HoTen
+       FROM DangKyCaLam dk
+       JOIN NhanVien nv ON nv.MaNV = dk.MaNV
+      WHERE dk.MaCa = @maCa
+        AND dk.LichRanh LIKE '%' + @ngay + '%'
+        AND nv.TinhTrang <> N'Đã nghỉ'
+      ORDER BY nv.HoTen`,
+    {
+      maCa: { type: sql.Char(10), value: maCaValue },
+      ngay: { type: sql.VarChar(10), value: ngay },
+    },
+  );
+
+  const registered = registeredResult.recordset
+    .map((row) => ({
+      maNV: String(row.MaNV).trim(),
+      hoTen: row.HoTen,
+    }))
+    .filter((row) => !selectedIds.includes(row.maNV));
+
   return {
     maCa: maCaValue,
     ngayISO: ngay,
@@ -232,6 +258,8 @@ async function getShiftEditor(maCa, ngayISO) {
       maNV: String(row.MaNV).trim(),
       hoTen: row.HoTen,
     })),
+    registered,
+    hasRegistered: registered.length > 0,
   };
 }
 
@@ -281,6 +309,32 @@ async function saveShift(maCa, ngayISO, maNVs) {
   }
 
   return MSG_UPDATE_OK;
+}
+
+/**
+ * Áp dụng đăng ký ca (UC05) vào lịch làm việc chính thức (M3).
+ * Chỉ thêm nhân viên còn đăng ký cho đúng ca + ngày, không gỡ người đã xếp.
+ *
+ * @param {string} maCa
+ * @param {string} ngayISO
+ * @param {string[]} maNVs nhân viên đăng ký được chọn
+ * @returns {Promise<string>} thông báo thành công
+ */
+async function applyRegistrations(maCa, ngayISO, maNVs) {
+  const context = await getShiftEditor(maCa, ngayISO);
+  if (context.isPast) throw badRequest(MSG_SHIFT_PAST);
+
+  const selected = [...new Set((maNVs || []).map((id) => String(id || '').trim()).filter(Boolean))];
+  if (selected.length === 0) throw badRequest(MSG_APPLY_EMPTY);
+
+  const allowed = new Set(context.registered.map((row) => row.maNV));
+  const toAdd = selected.filter((id) => allowed.has(id));
+  if (toAdd.length === 0) throw badRequest(MSG_APPLY_NONE);
+
+  const finalIds = context.inShift.map((row) => row.maNV).concat(toAdd);
+  await saveShift(maCa, ngayISO, finalIds);
+
+  return MSG_APPLY_OK;
 }
 
 /** Dữ liệu màn hình Xem danh sách ca làm (M4). */
@@ -347,6 +401,9 @@ module.exports = {
   MSG_UPDATE_OK,
   MSG_SHIFT_PAST,
   MSG_NO_SCHEDULE,
+  MSG_APPLY_OK,
+  MSG_APPLY_EMPTY,
+  MSG_APPLY_NONE,
   weekRangeLabel,
   buildWeekOptions,
   buildWeeksOfMonth,
@@ -354,6 +411,7 @@ module.exports = {
   getUpdateContext,
   getShiftEditor,
   saveShift,
+  applyRegistrations,
   getListContext,
   isShiftPast,
 };

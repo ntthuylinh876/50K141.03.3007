@@ -32,6 +32,23 @@
           <span class="data-card__note">Đơn vị: VNĐ</span>
         </div>
 
+        <% if (typeof proposals !== 'undefined' && proposals.length) { %>
+          <div class="proposal-notes">
+            <% proposals.forEach(function (proposal) {
+                 var line = rows.find(function (row) { return row.maCTL === proposal.maCTL; });
+            %>
+              <p class="proposal-note">
+                <span class="badge badge--<%= proposal.status.tone %>"><%= proposal.status.label %></span>
+                <span class="proposal-note__text">
+                  <% if (line) { %>Ca ngày <%= line.ngay %> · <% } %>
+                  gửi <%= proposal.ngayGui %> · <%= proposal.nguoiDeXuat %>: <%= proposal.lyDo %>
+                  <% if (proposal.lyDoTuChoi) { %> — Lý do từ chối: <%= proposal.lyDoTuChoi %><% } %>
+                </span>
+              </p>
+            <% }); %>
+          </div>
+        <% } %>
+
         <% if (isEmpty) { %>
           <div class="empty-state">
             <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>

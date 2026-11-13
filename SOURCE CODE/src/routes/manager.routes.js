@@ -10,11 +10,14 @@
  */
 
 const express = require('express');
-const { requireLogin, requireManager } = require('../middleware/auth');
+const { requireLogin, requireManager, requireOwner } = require('../middleware/auth');
 const scheduleService = require('../services/admin-schedule.service');
 const approvalService = require('../services/approval.service');
 const attendanceService = require('../services/attendance-admin.service');
 const payrollService = require('../services/payroll-admin.service');
+const proposalService = require('../services/payroll-proposal.service');
+const advanceService = require('../services/advance.service');
+const feedbackService = require('../services/feedback.service');
 
 const router = express.Router();
 
@@ -80,6 +83,29 @@ router.post('/ca-lam/cap-nhat/:maCa/:ngay', async (req, res, next) => {
     if (err.status === 400 || err.status === 404) {
       req.flash('error', err.message);
       return redirectTo(req, res, '/ca-lam/cap-nhat');
+    }
+    return next(err);
+  }
+});
+
+/** Áp dụng đăng ký ca (UC05) vào lịch chính thức của ca đang sửa. */
+router.post('/ca-lam/cap-nhat/:maCa/:ngay/ap-dung-dang-ky', async (req, res, next) => {
+  const raw = req.body.maNV;
+  const maNVs = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const backTo = `/ca-lam/cap-nhat/${req.params.maCa}/${req.params.ngay}`;
+
+  try {
+    const message = await scheduleService.applyRegistrations(
+      req.params.maCa,
+      req.params.ngay,
+      maNVs,
+    );
+    req.flash('success', message);
+    return redirectTo(req, res, backTo);
+  } catch (err) {
+    if (err.status === 400 || err.status === 404) {
+      req.flash('error', err.message);
+      return redirectTo(req, res, backTo);
     }
     return next(err);
   }
@@ -294,6 +320,63 @@ router.post('/cham-cong/duyet-bo-sung/:id/khong-duyet', async (req, res, next) =
 });
 
 /* ========================================================================== */
+/* Duyệt ứng lương (UC09 → UC13.1)                                             */
+/* ========================================================================== */
+
+router.get('/duyet-don/ung-luong', async (req, res, next) => {
+  try {
+    const [rows, pendingCount] = await Promise.all([
+      advanceService.getAdvances(),
+      advanceService.countPending(),
+    ]);
+    return res.render('pages/manager/advances', {
+      pageTitle: 'Duyệt ứng lương',
+      activeMenu: 'approve-advance',
+      rows,
+      pendingCount,
+      isEmpty: rows.length === 0,
+      emptyMessage: advanceService.MSG_NO_REQUESTS,
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.post('/duyet-don/ung-luong/:id/duyet', async (req, res, next) => {
+  try {
+    const message = await advanceService.approveAdvance(
+      String(req.params.id).trim(),
+      req.session.user.id,
+    );
+    req.flash('success', message);
+    return redirectTo(req, res, '/duyet-don/ung-luong');
+  } catch (err) {
+    if (err.status === 400 || err.status === 404) {
+      req.flash('error', err.message);
+      return redirectTo(req, res, '/duyet-don/ung-luong');
+    }
+    return next(err);
+  }
+});
+
+router.post('/duyet-don/ung-luong/:id/khong-duyet', async (req, res, next) => {
+  try {
+    const message = await advanceService.rejectAdvance(
+      String(req.params.id).trim(),
+      req.session.user.id,
+    );
+    req.flash('error', message);
+    return redirectTo(req, res, '/duyet-don/ung-luong');
+  } catch (err) {
+    if (err.status === 400 || err.status === 404) {
+      req.flash('error', err.message);
+      return redirectTo(req, res, '/duyet-don/ung-luong');
+    }
+    return next(err);
+  }
+});
+
+/* ========================================================================== */
 /* M8 — Dữ liệu chấm công                                                      */
 /* ========================================================================== */
 
@@ -365,6 +448,44 @@ router.get('/luong/bang-luong/:maBL/:maNV', async (req, res, next) => {
       periods,
     });
   } catch (err) {
+    return next(err);
+  }
+});
+
+/* --- Phản hồi phiếu lương của nhân viên (UC08 — 4a) ---------------------- */
+
+router.get('/luong/phan-hoi', async (req, res, next) => {
+  try {
+    const [rows, pendingCount] = await Promise.all([
+      feedbackService.getFeedbacks(),
+      feedbackService.countPending(),
+    ]);
+    return res.render('pages/manager/feedback-list', {
+      pageTitle: 'Phản hồi phiếu lương',
+      activeMenu: 'payroll-feedback',
+      rows,
+      pendingCount,
+      isEmpty: rows.length === 0,
+      emptyMessage: feedbackService.MSG_NO_FEEDBACK,
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.post('/luong/phan-hoi/:id/xu-ly', async (req, res, next) => {
+  try {
+    const message = await feedbackService.markProcessed(
+      String(req.params.id).trim(),
+      req.session.user.id,
+    );
+    req.flash('success', message);
+    return redirectTo(req, res, '/luong/phan-hoi');
+  } catch (err) {
+    if (err.status === 400 || err.status === 404) {
+      req.flash('error', err.message);
+      return redirectTo(req, res, '/luong/phan-hoi');
+    }
     return next(err);
   }
 });
@@ -467,8 +588,29 @@ router.post('/luong/duyet/:maBL/:maNV', async (req, res, next) => {
 router.get('/luong/cap-nhat', async (req, res, next) => {
   try {
     const ctx = await payrollService.getPayslipList(req.query.ky);
+    const [history, pendingProposals] = await Promise.all([
+      proposalService.getProposalHistory(),
+      proposalService.countPendingProposals(),
+    ]);
     return res.render('pages/manager/payslip-list', {
       pageTitle: 'Danh sách phiếu lương',
+      activeMenu: 'payroll-update',
+      ...ctx,
+      history,
+      pendingProposals,
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+/* --- O3 — Chủ quán xét đề xuất chỉnh sửa lương (7.2.3.45–47) ------------- */
+
+router.get('/luong/cap-nhat/xet-de-xuat', requireOwner, async (req, res, next) => {
+  try {
+    const ctx = await proposalService.getReviewScreen();
+    return res.render('pages/manager/payroll-proposals', {
+      pageTitle: 'Chủ quán xét đề xuất',
       activeMenu: 'payroll-update',
       ...ctx,
     });
@@ -477,13 +619,53 @@ router.get('/luong/cap-nhat', async (req, res, next) => {
   }
 });
 
+router.post('/luong/cap-nhat/xet-de-xuat/:maPH/duyet', requireOwner, async (req, res, next) => {
+  try {
+    const result = await proposalService.approveProposal(req.params.maPH, {
+      role: req.session.user.role,
+    });
+    req.flash('success', result.message);
+    return redirectTo(req, res, '/luong/cap-nhat/xet-de-xuat');
+  } catch (err) {
+    if (err.status === 400 || err.status === 404) {
+      req.flash('error', err.message);
+      return redirectTo(req, res, '/luong/cap-nhat/xet-de-xuat');
+    }
+    return next(err);
+  }
+});
+
+router.post(
+  '/luong/cap-nhat/xet-de-xuat/:maPH/khong-duyet',
+  requireOwner,
+  async (req, res, next) => {
+    try {
+      const message = await proposalService.rejectProposal(
+        req.params.maPH,
+        req.body.lyDo,
+        req.session.user.role,
+      );
+      req.flash('error', message);
+      return redirectTo(req, res, '/luong/cap-nhat/xet-de-xuat');
+    } catch (err) {
+      if (err.status === 400 || err.status === 404) {
+        req.flash('error', err.message);
+        return redirectTo(req, res, '/luong/cap-nhat/xet-de-xuat');
+      }
+      return next(err);
+    }
+  },
+);
+
 router.get('/luong/cap-nhat/:maPL', async (req, res, next) => {
   try {
     const ctx = await payrollService.getPayslipDetail(req.params.maPL);
+    const proposals = await proposalService.getPayslipProposals(ctx.slip.maPL);
     return res.render('pages/manager/payslip-detail', {
       pageTitle: 'Chi tiết phiếu lương',
       activeMenu: 'payroll-update',
       ...ctx,
+      proposals,
     });
   } catch (err) {
     return next(err);
@@ -516,6 +698,10 @@ router.post('/luong/cap-nhat/:maPL/khong-co-sai-sot', async (req, res, next) => 
 
 router.get('/luong/cap-nhat/:maPL/chinh-sua/:maCTL', async (req, res, next) => {
   try {
+    if (req.session.user.role === proposalService.ROLE_OWNER) {
+      req.flash('error', 'Chủ quán xét đề xuất, không chỉnh sửa phiếu lương.');
+      return res.redirect(`${req.baseUrl}/luong/cap-nhat/${req.params.maPL}`);
+    }
     const ctx = await payrollService.getPayslipEditor(req.params.maPL, req.params.maCTL);
     return res.render('pages/manager/payslip-edit', {
       pageTitle: 'Chỉnh sửa phiếu lương',
@@ -531,10 +717,12 @@ router.get('/luong/cap-nhat/:maPL/chinh-sua/:maCTL', async (req, res, next) => {
 
 router.post('/luong/cap-nhat/:maPL/chinh-sua/:maCTL', async (req, res, next) => {
   try {
-    const message = await payrollService.savePayslipCorrection(
+    const message = await proposalService.createProposal(
       req.params.maPL,
       req.params.maCTL,
       req.body,
+      req.session.user.id,
+      req.session.user.role,
     );
     req.flash('success', message);
     return res.redirect(`${req.baseUrl}/luong/cap-nhat/${req.params.maPL}`);

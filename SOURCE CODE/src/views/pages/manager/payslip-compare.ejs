@@ -37,16 +37,23 @@
           <% }); %>
         </div>
 
-        <div class="compare-actions">
-          <button type="button" class="btn btn--secondary" data-open-modal="#noErrorModal">
-            Không có sai sót
-          </button>
+        <% if (currentUser.role === 'owner') { %>
+          <p class="compare-note">
+            Chỉ quản lý được gửi đề xuất chỉnh sửa lương. Chủ quán duyệt đề xuất tại mục
+            <a href="<%= basePath %>/luong/cap-nhat/xet-de-xuat">Chủ quán xét đề xuất</a>.
+          </p>
+        <% } else { %>
+          <div class="compare-actions">
+            <button type="button" class="btn btn--secondary" data-open-modal="#noErrorModal">
+              Không có sai sót
+            </button>
 
-          <a class="btn" href="<%= basePath %>/luong/cap-nhat/<%= line.maPL %>/chinh-sua/<%= line.maCTL %>">
-            <svg width="16" height="16" aria-hidden="true"><use href="#i-edit"></use></svg>
-            Chỉnh sửa
-          </a>
-        </div>
+            <a class="btn" href="<%= basePath %>/luong/cap-nhat/<%= line.maPL %>/chinh-sua/<%= line.maCTL %>">
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-edit"></use></svg>
+              Chỉnh sửa
+            </a>
+          </div>
+        <% } %>
       </section>
 
       <div class="modal-overlay" data-modal id="noErrorModal" hidden>

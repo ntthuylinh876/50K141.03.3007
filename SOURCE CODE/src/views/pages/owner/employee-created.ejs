@@ -1,0 +1,51 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý thông tin nhân viên</span>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Thêm nhân viên</span>
+      </nav>
+
+      <section class="data-card account-created">
+        <div class="account-created__icon">
+          <svg aria-hidden="true"><use href="#i-check-circle"></use></svg>
+        </div>
+        <h1 class="account-created__title">Thêm nhân viên thành công</h1>
+        <p class="account-created__subtitle">
+          <%= employee.hoTen %> · <%= employee.maNV %>
+        </p>
+
+        <dl class="account-created__list">
+          <div class="account-created__row">
+            <dt>Tên đăng nhập</dt>
+            <dd><code><%= account.phone %></code></dd>
+          </div>
+          <div class="account-created__row">
+            <dt>Mật khẩu tự sinh</dt>
+            <dd><code><%= account.password %></code></dd>
+          </div>
+        </dl>
+
+        <p class="form-hint account-created__note">
+          Mật khẩu chỉ hiển thị một lần. Hãy gửi cho nhân viên và nhắc họ đổi mật khẩu sau khi đăng nhập.
+        </p>
+
+        <div class="form-actions form-actions--end">
+          <a class="btn btn--light" href="<%= basePath %>/nhan-vien/sua">Danh sách nhân viên</a>
+          <a class="btn" href="<%= basePath %>/nhan-vien/them">Thêm nhân viên khác</a>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

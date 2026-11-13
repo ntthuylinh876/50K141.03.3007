@@ -1,6 +1,6 @@
 # Tiến độ dự án — Hệ thống chấm công và tính lương
 
-Cập nhật: 11/11/2026 · Giai đoạn 2 · Hạng mục: **6 màn hình Nhân viên** (mục 9)
+Cập nhật: 13/11/2026 · Giai đoạn 4 xong · Đang rà soát Giai đoạn 5
 
 ---
 
@@ -636,4 +636,146 @@ không đổi kết quả).
 3. Đăng xuất, đăng nhập chủ quán `0909999999 / 123456` → **Quản lý lương › Duyệt lương**: kỳ 10/2026 hiện nút **Duyệt**.
 4. Bấm **Duyệt** → kỳ chuyển `Đã duyệt`; nhân viên của kỳ đó mở **Kiểm tra phiếu lương** thấy phiếu.
 5. Mở một kỳ `Chưa duyệt` bằng tài khoản chủ quán → chỉ thấy nhãn **Chờ quản lý duyệt trước**, không có nút sửa phạt.
+
+## 12. O3 — Cập nhật bảng lương: đề xuất chỉnh sửa (13/11/2026)
+
+Hoàn thiện UC13.3 theo hướng **2 bước**: quản lý đối chiếu phiếu lương rồi **gửi đề xuất**, chủ quán
+**duyệt / không duyệt**. Phiếu lương chỉ thay đổi sau khi chủ quán duyệt (ảnh `Cập nhật bảng lương 10–15`).
+
+### 12.1. Quyết định đã chốt với bạn
+
+| # | Vấn đề | Quyết định |
+| --- | --- | --- |
+| 1 | Ai được sửa phiếu lương | Quản lý **gửi đề xuất**, chủ quán **duyệt**. Không sửa thẳng phiếu; chủ quán không gửi đề xuất, quản lý không duyệt |
+| 2 | Kỳ lương hiển thị ở M11 | Chỉ kỳ `Đã duyệt` (pre-condition UC13.3). Mặc định lấy **kỳ đã duyệt gần nhất** (08/2026), có dropdown đổi kỳ |
+| 3 | Nơi lưu đề xuất | `PhanHoiLuong.NoiDungDeXuat` (JSON: `maCTL`, `cu`, `moi`, `ketQua`), `LyDo` là lý do chỉnh sửa. Không bảng mới, không đổi schema ngoài migration 002 |
+| 4 | Hạn điều chỉnh | `BangLuong.NgayChiTra`: trong hạn sửa thẳng phiếu; **quá hạn** giữ nguyên kỳ cũ và cộng/trừ chênh lệch vào `PhieuLuong.ChenhLechKetChuyen` của kỳ kế tiếp (BR-UC13.1-08) |
+| 5 | Kỳ kế tiếp chưa có bảng lương | Chặn duyệt kèm thông báo "Chưa có bảng lương tháng … để kết chuyển chênh lệch" |
+| 6 | Gửi lại đề xuất cho cùng một ca | Ghi đè bản ghi đang `Chờ chủ quán duyệt` thay vì tạo bản mới, tránh 2 đề xuất mâu thuẫn |
+| 7 | Trạng thái & lý do từ chối | `Chờ chủ quán duyệt` / `Đã duyệt` / `Từ chối`; lý do từ chối lưu trong JSON (`ketQua.lyDoTuChoi`) vì bảng không có cột riêng |
+| 8 | Quản lý biết kết quả ở đâu | Bảng **Đề xuất chỉnh sửa lương** ngay trên M11 (kỳ, ngày gửi, người đề xuất, lý do, trạng thái, ghi chú kết chuyển/lý do từ chối) + ghi chú theo từng ca ở trang chi tiết phiếu |
+
+### 12.2. File đã sửa
+
+| File | Nội dung |
+| --- | --- |
+| `src/services/payroll-proposal.service.js` | Thêm `ROLE_OWNER`, `proposalStatusMeta`, kiểm tra vai trò khi gửi/duyệt/từ chối, bắt buộc giờ vào + giờ ra + lý do; `countPendingProposals`, `getPayslipProposals` (đề xuất mới nhất theo ca), `getProposalHistory` (kèm `carryLabel`, `rejectReason`); `approveProposal` ghi `ketQua.kyDich`; `rejectProposal` nhận vai trò |
+| `src/services/payroll-admin.service.js` | Thêm `getLatestApprovedPeriod`; `getPayslipList` mặc định kỳ đã duyệt gần nhất; **bỏ** `savePayslipCorrection` + `MSG_CORRECTION` (ghi thẳng đã thay bằng luồng đề xuất) |
+| `src/routes/manager.routes.js` | M11 truyền `history` + `pendingProposals`; thêm `GET /luong/cap-nhat/xet-de-xuat`, `POST …/:maPH/duyet`, `POST …/:maPH/khong-duyet` (đều `requireOwner`); trang chi tiết truyền `proposals`; form chỉnh sửa gọi `createProposal`, chặn chủ quán |
+| `src/views/pages/manager/payroll-proposals.ejs` (mới) | Màn "Chủ quán xét đề xuất": bảng so sánh *Phiếu hiện tại / Đề xuất*, thẻ lý do, nút **Không duyệt** (hộp thoại lý do) và **Duyệt**, badge "Quá hạn — kết chuyển kỳ sau" |
+| `src/views/pages/manager/payslip-list.ejs` | Banner chờ duyệt cho chủ quán + bảng lịch sử đề xuất (`table--stack` trên điện thoại) |
+| `src/views/pages/manager/payslip-detail.ejs` | Ghi chú trạng thái đề xuất theo từng ca (kèm lý do từ chối) |
+| `src/views/pages/manager/payslip-compare.ejs` | Chủ quán chỉ thấy lời nhắc sang màn xét đề xuất, ẩn nút "Không có sai sót"/"Chỉnh sửa" |
+| `src/views/pages/manager/payslip-edit.ejs` | Ghi rõ đề xuất được gửi tới chủ quán duyệt; `data-required` cho giờ vào/giờ ra/lý do |
+| `src/public/css/layout.css` | Khối `.proposal-*`, `.proposal-banner*`, `.proposal-note*`, `.compare-note`, `.table--stack`; ≤1024px bảng so sánh + lý do xếp dọc, ≤640px mỗi dòng đề xuất thành thẻ |
+| `src/middleware/error.js` | Sửa lỗi có sẵn: trang lỗi thiếu `appName`/`homePath` (lỗi CSRF/Wi-Fi rơi vào middleware trước `viewLocals`) làm chính trang lỗi ném lỗi |
+| `tests/payroll-proposal.test.js` (mới) | 10 test: trạng thái, pre-condition kỳ đã duyệt, nhãn badge, định dạng giờ, kỳ kế tiếp, tính lại thực nhận, chặn sai vai trò |
+
+### 12.3. Đường dẫn
+
+| Vai trò | Phương thức & đường dẫn | Việc làm |
+| --- | --- | --- |
+| Quản lý | `GET /quan-ly/luong/cap-nhat` | Danh sách phiếu lương kỳ đã duyệt + lịch sử đề xuất |
+| Quản lý | `GET/POST /quan-ly/luong/cap-nhat/:maPL/chinh-sua/:maCTL` | Đối chiếu và **Gửi đề xuất** |
+| Chủ quán | `GET /chu-quan/luong/cap-nhat/xet-de-xuat` | Xét đề xuất đang chờ |
+| Chủ quán | `POST /chu-quan/luong/cap-nhat/xet-de-xuat/:maPH/duyet` | Duyệt → áp giá trị hoặc kết chuyển |
+| Chủ quán | `POST /chu-quan/luong/cap-nhat/xet-de-xuat/:maPH/khong-duyet` | Từ chối kèm lý do |
+
+### 12.4. Kiểm tra
+
+| Hạng mục | Kết quả |
+| --- | --- |
+| `node --test tests/` | **45/45** (35 cũ + 10 mới) |
+| Nghiệp vụ trên service (`tmp/flow-o3-service.js`) | **20/20**: duyệt trong hạn sửa thẳng giờ/số giờ/phạt/ứng và tính lại phiếu; duyệt lại bị chặn; từ chối giữ nguyên phiếu + lưu lý do; lịch sử hiện lý do từ chối |
+| HTTP thật (`tmp/flow-o3.js`) | **24/24**: quản lý gửi đề xuất → chủ quán thấy banner, bảng so sánh, lý do → duyệt → `Đã duyệt`; kỳ 08/2026 đã qua 05/09/2026 nên chênh lệch `-33.810đ` vào `ChenhLechKetChuyen` kỳ 09/2026; phân quyền hai chiều bị chặn |
+| HTTP nhánh từ chối (`tmp/flow-o3-reject.js`) | **4/4**: `Từ chối`, lưu `Chưa đối chiếu đủ chấm công`, danh sách hiện đúng trạng thái và lý do |
+| `node scripts/smoke-test.js` | **22/22** |
+| Giao diện 1280px / 375px | Không tràn ngang (`scrollWidth` = `innerWidth`): màn xét đề xuất, danh sách phiếu + lịch sử, chi tiết phiếu, form chỉnh sửa, đối chiếu (chủ quán) |
+| Nạp lại dữ liệu demo | `node db/seed.js` → 3 kỳ / 30 phiếu / 2 phản hồi; xóa hết đề xuất thử |
+
+Lỗi gặp khi kiểm tra: (1) truy vấn màn xét đề xuất chọn `ph.MaND` — `PhanHoiLuong` dùng `MaNV`;
+(2) trang lỗi thiếu `appName`/`homePath` nên mọi phản hồi 4xx/5xx đều vỡ. Cả hai đã sửa.
+
+### 12.5. Còn lại
+
+- Chưa có thông báo đẩy cho quản lý khi chủ quán xử lý (CSDL không có bảng thông báo) — hiện dựa vào
+  bảng lịch sử trên M11.
+- Mỗi đề xuất sửa **một ca** (đúng 7.2.2.51); muốn sửa nhiều ca trong một phiếu phải gửi nhiều đề xuất.
+- Đề xuất quá hạn chỉ kết chuyển được khi kỳ sau **đã có bảng lương**; chưa có thì phải sinh kỳ trước.
+
+## 13. Đóng Giai đoạn 4 — UC14, duyệt ứng lương, đăng ký ca trong M3, phản hồi phiếu lương (13/11/2026)
+
+Bốn phần còn thiếu để khép vòng nghiệp vụ, làm đúng thứ tự đã chốt:
+
+1. **UC14.1–14.3** — chủ quán thêm / sửa / xóa nhân viên, tự sinh tài khoản, xóa mềm, kiểm tra số
+   điện thoại duy nhất.
+2. **Duyệt ứng lương** — nối UC09 → UC13.1, trước đây nhân viên gửi đơn nhưng không ai duyệt.
+3. **Đăng ký ca vào M3** — hiển thị đăng ký của nhân viên và nút "Áp dụng đăng ký", khép UC05 → UC10.1.
+4. **Phản hồi phiếu lương** — màn xử lý cho Quản lý / Chủ quán (UC08 — luồng thay thế 4a).
+
+### 13.1. Quyết định đã áp dụng
+
+| # | Vấn đề | Quyết định |
+| --- | --- | --- |
+| 1 | Nhập mã nhân viên khi thêm | Chủ quán nhập tay `MaNV` (SRS 7.2.3.48), biểu mẫu gợi ý mã kế tiếp; chặn trùng mã |
+| 2 | Tài khoản nhân viên mới | Tự sinh: tên đăng nhập = số điện thoại, mật khẩu tạm 8 ký tự hiển thị **một lần** ở trang thành công (CSDL không có cột trạng thái "phải đổi mật khẩu") |
+| 3 | Số điện thoại duy nhất (C12) | Kiểm tra chéo `NhanVien` + `QuanLy`; khi sửa báo `Số điện thoại đã tồn tại` |
+| 4 | Xóa nhân viên | Xóa mềm: `TinhTrang = N'Đã nghỉ'` (C5), giữ lịch sử lương; ẩn khỏi danh sách đang làm |
+| 5 | Mức lương khi thêm/sửa | Là **đơn giá giờ**, nhận cả `25000` và `25.000`; lưu `Decimal` |
+| 6 | Tài khoản ngân hàng | Một ô `TENNGANHANG-SOTAIKHOAN`, tách thành `TenNganHang` + `SoTaiKhoan` (nhận cả dấu cách) |
+| 7 | Duyệt ứng lương | Màn riêng dưới "Duyệt đơn đăng ký"; chỉ khoản `Đã duyệt` + `MaPL IS NULL` mới bị trừ khi sinh bảng lương |
+| 8 | Phản hồi phiếu lương | Chỉ lấy dòng `NoiDungDeXuat IS NULL` (tách khỏi đề xuất O3); xử lý = `TrangThai = N'Đã xử lý'`, ghi `MaQL` |
+| 9 | Đăng ký ca trong M3 | Hiển thị người đăng ký đúng ca + ngày và chưa có trong lịch; nút "Áp dụng đăng ký" **chỉ thêm**, không gỡ người đã xếp |
+
+### 13.2. File đã thêm / sửa
+
+| File | Nội dung |
+| --- | --- |
+| `src/services/employee-admin.service.js` (mới) | `parseEmployeeForm`, `parseBankAccount`, `bankLabel`, `codeExists`, `phoneExists` (chéo 2 bảng), `suggestNextCode`, `listEmployees`, `getEmployee`, `addEmployee` (sinh mật khẩu tạm + băm), `updateEmployee`, `removeEmployee` (xóa mềm) |
+| `src/routes/owner.routes.js` | Thay placeholder bằng route thật UC14 (`/nhan-vien/them`, `/sua`, `/xoa` + trang tài khoản một lần); route thật đăng ký **trước** router quản lý kế thừa |
+| `src/views/pages/owner/employee-add.ejs`, `employee-created.ejs`, `employee-list.ejs`, `employee-edit.ejs` (mới) | Biểu mẫu thêm/sửa, trang hiển thị tài khoản một lần, danh sách dùng chung cho sửa/xóa, hộp thoại xác nhận xóa |
+| `src/services/advance.service.js` (mới) | `getAdvances`, `countPending`, `approveAdvance`, `rejectAdvance`, `statusMeta`, `formatSentAt`; chặn xử lý lại đơn đã xử lý |
+| `src/services/feedback.service.js` (mới) | `getFeedbacks` (chỉ phản hồi nhân viên), `countPending`, `markProcessed`; chặn xử lý lại |
+| `src/routes/manager.routes.js` | Thêm 3 route duyệt ứng lương, 2 route phản hồi phiếu lương, 1 route áp dụng đăng ký ca |
+| `src/views/pages/manager/advances.ejs`, `feedback-list.ejs` (mới) | Danh sách thẻ có thao tác duyệt / đánh dấu đã xử lý |
+| `src/services/admin-schedule.service.js` | `getShiftEditor` trả thêm `registered`/`hasRegistered`; thêm `applyRegistrations` (chỉ thêm người đăng ký vào `LichLamViec`) |
+| `src/views/pages/manager/schedule-edit.ejs` | Khối "Nhân viên đăng ký ca này" + nút "Áp dụng đăng ký" (form riêng, không lồng form) |
+| `src/config/menu.js` | Thêm `approve-advance` (Duyệt đơn đăng ký) và `payroll-feedback` (Quản lý lương); chủ quán kế thừa tự động |
+| `src/services/request.service.js` | Danh sách phản hồi trên phiếu lương của nhân viên lọc `NoiDungDeXuat IS NULL` |
+| `src/public/css/layout.css` | `.approve-list`/`.approve-item*`, `.registered-card`, `.account-created*`, `.modal-card__title/text`; bổ sung responsive 640px |
+| `src/public/js/app.js` | Xử lý `[data-modal-close]` để nút "Hủy" đóng hộp thoại xác nhận |
+| `tests/employee-admin.test.js`, `advance.test.js`, `feedback.test.js` (mới) | 21 test cho biểu mẫu nhân viên, trạng thái ứng lương và phản hồi |
+
+### 13.3. Đường dẫn mới
+
+| Vai trò | Phương thức & đường dẫn | Việc làm |
+| --- | --- | --- |
+| Chủ quán | `GET/POST /chu-quan/nhan-vien/them` | Thêm nhân viên + sinh tài khoản |
+| Chủ quán | `GET /chu-quan/nhan-vien/them/thanh-cong` | Hiện tài khoản một lần |
+| Chủ quán | `GET /chu-quan/nhan-vien/sua`<br>`GET/POST /chu-quan/nhan-vien/sua/:maNV` | Danh sách + sửa |
+| Chủ quán | `GET /chu-quan/nhan-vien/xoa`<br>`POST /chu-quan/nhan-vien/xoa/:maNV` | Danh sách + xóa mềm |
+| Quản lý / Chủ quán | `GET /quan-ly/duyet-don/ung-luong`<br>`POST .../:id/duyet`, `.../:id/khong-duyet` | Duyệt ứng lương |
+| Quản lý / Chủ quán | `GET /quan-ly/luong/phan-hoi`<br>`POST .../:id/xu-ly` | Xử lý phản hồi phiếu lương |
+| Quản lý / Chủ quán | `POST /quan-ly/ca-lam/cap-nhat/:maCa/:ngay/ap-dung-dang-ky` | Áp dụng đăng ký ca vào lịch |
+
+### 13.4. Kiểm tra
+
+| Hạng mục | Kết quả |
+| --- | --- |
+| `node --test tests/` | **66/66** (45 cũ + 3 file mới: 12 + 5 + 4) |
+| `node scripts/smoke-test.js` | **22/22** |
+| HTTP thật (`tmp/check-new-screens.js`) | **18/18**: UC14 thêm → trang tài khoản → sửa → chặn trùng SĐT → xóa mềm → ẩn khỏi danh sách; duyệt ứng lương; xử lý phản hồi; M3 hiện khối đăng ký + áp dụng thành công |
+| Nghiệp vụ tiền lương | `loadApprovedAdvances` chỉ lấy `TrangThai = N'Đã duyệt' AND MaPL IS NULL` — khoản chờ/từ chối không bị trừ |
+| Nạp lại dữ liệu demo | `node db/seed.js` → 3 kỳ · 30 phiếu · 5 khoản ứng · 2 phản hồi như cũ |
+
+Lỗi gặp và đã sửa: `parseBankAccount` ban đầu chỉ nhận dấu gạch ngang; đã mở thêm dấu cách để khớp
+mô tả "TENNGANHANG-SOTAIKHOAN" và dữ liệu nhập tay.
+
+### 13.5. Còn lại
+
+- Chưa có màn đổi mật khẩu lần đầu cho nhân viên mới (CSDL không có cờ trạng thái tài khoản).
+- Phản hồi phiếu lương chỉ đánh dấu đã xử lý, chưa có ô trả lời (bảng không có cột nội dung trả lời).
+- Áp dụng đăng ký ca chỉ thêm người; muốn gỡ phải dùng phần chỉnh sửa ca bên dưới.
+
+
 

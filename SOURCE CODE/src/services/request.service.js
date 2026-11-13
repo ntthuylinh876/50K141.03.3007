@@ -635,6 +635,7 @@ async function getPayslipContext(maNV, maBL) {
     `SELECT MaPH, NgayGui, LyDo, TrangThai
        FROM PhanHoiLuong
       WHERE MaPL = @maPL AND MaNV = @maNV
+        AND NoiDungDeXuat IS NULL
       ORDER BY NgayGui DESC`,
     {
       maPL: { type: sql.Char(10), value: String(slip.MaPL).trim() },

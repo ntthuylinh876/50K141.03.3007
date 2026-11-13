@@ -38,6 +38,9 @@ const STATUS = Object.freeze({
 /** Bảng lương phải ở trạng thái này mới nhận đề xuất (UC13.3 pre-condition). */
 const PERIOD_APPROVED = 'Đã duyệt';
 
+/** Vai trò chủ quán — người duyệt đề xuất, không phải người gửi đề xuất. */
+const ROLE_OWNER = 'owner';
+
 const MSG_PROPOSED = 'Chỉnh sửa phiếu lương cần duyệt!';
 const MSG_APPROVED = 'Đã cập nhật lại phiếu lương!';
 const MSG_CARRY = 'Quá hạn chỉnh sửa, lương sẽ được kết chuyển sang kỳ sau!';
@@ -67,6 +70,20 @@ function parseProposal(text) {
   } catch {
     return null;
   }
+}
+
+/** Nhãn + màu hiển thị của trạng thái đề xuất (cột PhanHoiLuong.TrangThai). */
+function proposalStatusMeta(trangThai) {
+  const value = String(trangThai || '').trim();
+  if (value === STATUS.APPROVED) return { label: value, tone: 'success' };
+  if (value === STATUS.REJECTED) return { label: value, tone: 'danger' };
+  if (value === STATUS.PENDING) return { label: value, tone: 'warning' };
+  return { label: value, tone: 'neutral' };
+}
+
+/** 'YYYY-MM-DD' hoặc Date → 'dd/mm/yyyy'. */
+function formatDate(value) {
+  return dt.formatDateVN(dt.toISODate(value)) || '';
 }
 
 /* -------------------------------------------------------------------------- */
@@ -178,8 +195,13 @@ function applyValues(line, values) {
  * @param {string} maCTL
  * @param {Object} input  { gioVao, gioRa, phat, ung, lyDo }
  * @param {string} maQL   mã quản lý gửi đề xuất
+ * @param {string} [role] vai trò người gửi (chủ quán không gửi đề xuất)
  */
-async function createProposal(maPL, maCTL, input, maQL) {
+async function createProposal(maPL, maCTL, input, maQL, role) {
+  if (role === ROLE_OWNER) {
+    throw badRequest('Chủ quán xét đề xuất, không gửi đề xuất chỉnh sửa lương.');
+  }
+
   const line = await loadLine(maPL, maCTL);
 
   if (line.tinhTrang !== PERIOD_APPROVED) {
@@ -193,8 +215,10 @@ async function createProposal(maPL, maCTL, input, maQL) {
   const lyDo = String(input.lyDo || '').trim();
 
   const fieldErrors = {};
-  if (gioVao && !TIME_PATTERN.test(gioVao)) fieldErrors.gioVao = 'Giờ vào không hợp lệ.';
-  if (gioRa && !TIME_PATTERN.test(gioRa)) fieldErrors.gioRa = 'Giờ ra không hợp lệ.';
+  if (!gioVao) fieldErrors.gioVao = 'Vui lòng nhập giờ vào.';
+  else if (!TIME_PATTERN.test(gioVao)) fieldErrors.gioVao = 'Giờ vào không hợp lệ.';
+  if (!gioRa) fieldErrors.gioRa = 'Vui lòng nhập giờ ra.';
+  else if (!TIME_PATTERN.test(gioRa)) fieldErrors.gioRa = 'Giờ ra không hợp lệ.';
   if (!Number.isFinite(phat) || phat < 0) fieldErrors.phat = 'Tiền phạt không hợp lệ.';
   if (!Number.isFinite(ung) || ung < 0) fieldErrors.ung = 'Tiền ứng không hợp lệ.';
   if (!lyDo) fieldErrors.lyDo = 'Vui lòng nhập lý do chỉnh sửa.';
@@ -276,7 +300,7 @@ async function createProposal(maPL, maCTL, input, maQL) {
 /** Các đề xuất đang chờ chủ quán duyệt, kèm giá trị hiện tại và đề xuất. */
 async function getReviewScreen({ today = dt.todayISO() } = {}) {
   const result = await query(
-    `SELECT ph.MaPH, ph.NgayGui, ph.LyDo, ph.MaQL, ph.MaPL, ph.MaND, ph.NoiDungDeXuat,
+    `SELECT ph.MaPH, ph.NgayGui, ph.LyDo, ph.MaQL, ph.MaPL, ph.MaNV, ph.NoiDungDeXuat,
             nv.HoTen,
             bl.MaBL, bl.Thang, bl.Nam,
             CONVERT(char(10), bl.NgayChiTra, 23) AS NgayChiTraISO,
@@ -361,6 +385,103 @@ async function getReviewScreen({ today = dt.todayISO() } = {}) {
   }
 
   return { items, isEmpty: items.length === 0, emptyMessage: MSG_EMPTY };
+}
+
+/* -------------------------------------------------------------------------- */
+/* Trạng thái đề xuất cho quản lý / danh sách phiếu lương                      */
+/* -------------------------------------------------------------------------- */
+
+/** Số đề xuất đang chờ chủ quán duyệt. */
+async function countPendingProposals() {
+  const result = await query(
+    `SELECT COUNT(*) AS SoLuong
+       FROM PhanHoiLuong
+      WHERE NoiDungDeXuat IS NOT NULL AND TrangThai = @status`,
+    { status: { type: sql.NVarChar(20), value: STATUS.PENDING } },
+  );
+  return Number(result.recordset[0]?.SoLuong || 0);
+}
+
+/**
+ * Đề xuất mới nhất của từng dòng ca trong một phiếu lương, kèm trạng thái.
+ * Dùng để quản lý biết dòng nào đang chờ duyệt / đã duyệt / bị từ chối.
+ *
+ * @param {string} maPL
+ */
+async function getPayslipProposals(maPL) {
+  const result = await query(
+    `SELECT ph.MaPH, ph.NgayGui, ph.LyDo, ph.TrangThai, ph.NoiDungDeXuat,
+            ql.HoTen AS TenQuanLy
+       FROM PhanHoiLuong ph
+       LEFT JOIN QuanLy ql ON ql.MaQL = ph.MaQL
+      WHERE ph.MaPL = @maPL AND ph.NoiDungDeXuat IS NOT NULL
+      ORDER BY ph.NgayGui DESC, ph.MaPH DESC`,
+    { maPL: { type: sql.Char(10), value: String(maPL || '').trim() } },
+  );
+
+  const latest = new Map();
+
+  for (const row of result.recordset) {
+    const noiDung = parseProposal(row.NoiDungDeXuat);
+    if (!noiDung || !noiDung.maCTL) continue;
+
+    const maCTL = String(noiDung.maCTL).trim();
+    if (latest.has(maCTL)) continue;
+
+    latest.set(maCTL, {
+      maPH: String(row.MaPH).trim(),
+      maCTL,
+      ngayGui: formatDate(row.NgayGui),
+      nguoiDeXuat: row.TenQuanLy || 'Quản lý',
+      lyDo: String(row.LyDo || '').trim(),
+      status: proposalStatusMeta(row.TrangThai),
+      lyDoTuChoi: String(noiDung.ketQua?.lyDoTuChoi || '').trim(),
+    });
+  }
+
+  return Array.from(latest.values());
+}
+
+/**
+ * Nhật ký đề xuất chỉnh sửa lương (mới nhất trước) — cột `PhanHoiLuong` là nơi
+ * lưu lịch sử theo quyết định C17.
+ *
+ * @param {{limit?: number}} [options]
+ */
+async function getProposalHistory({ limit = 20 } = {}) {
+  const result = await query(
+    `SELECT TOP (@limit) ph.MaPH, ph.NgayGui, ph.LyDo, ph.TrangThai, ph.NoiDungDeXuat,
+            nv.HoTen, ql.HoTen AS TenQuanLy,
+            pl.MaPL, bl.Thang, bl.Nam
+       FROM PhanHoiLuong ph
+       LEFT JOIN NhanVien nv ON nv.MaNV = ph.MaNV
+       LEFT JOIN QuanLy ql ON ql.MaQL = ph.MaQL
+       LEFT JOIN PhieuLuong pl ON pl.MaPL = ph.MaPL
+       LEFT JOIN BangLuong bl ON bl.MaBL = pl.MaBL
+      WHERE ph.NoiDungDeXuat IS NOT NULL
+      ORDER BY ph.NgayGui DESC, ph.MaPH DESC`,
+    { limit: { type: sql.Int, value: Math.max(1, Number(limit) || 20) } },
+  );
+
+  return result.recordset.map((row) => {
+    const noiDung = parseProposal(row.NoiDungDeXuat);
+    const ketQua = noiDung?.ketQua || {};
+
+    return {
+      maPH: String(row.MaPH).trim(),
+      ngayGui: formatDate(row.NgayGui),
+      hoTen: row.HoTen || '—',
+      nguoiDeXuat: row.TenQuanLy || 'Quản lý',
+      kyLabel: row.Thang ? `Tháng ${String(row.Thang).padStart(2, '0')}/${row.Nam}` : '—',
+      maPL: row.MaPL ? String(row.MaPL).trim() : null,
+      lyDo: String(row.LyDo || '').trim(),
+      status: proposalStatusMeta(row.TrangThai),
+      // Đề xuất duyệt sau hạn chi trả: giá trị không sửa vào kỳ cũ mà được
+      // cộng/trừ vào kỳ sau, nên phải nói rõ kỳ nhận chênh lệch.
+      carryLabel: ketQua.kieu === 'ket-chuyen' ? ketQua.kyDich || 'kỳ sau' : '',
+      rejectReason: String(ketQua.lyDoTuChoi || '').trim(),
+    };
+  });
 }
 
 /* -------------------------------------------------------------------------- */
@@ -490,10 +611,14 @@ async function findNextPayslip(maNV, year, month) {
  * Chủ quán duyệt đề xuất: áp giá trị mới rồi tính lại phiếu lương.
  *
  * @param {string} maPH
- * @param {{today?: string}} [options]
+ * @param {{today?: string, role?: string}} [options]
  * @returns {Promise<{message: string, mode: 'direct'|'carry', chenhLech?: number}>}
  */
-async function approveProposal(maPH, { today = dt.todayISO() } = {}) {
+async function approveProposal(maPH, { today = dt.todayISO(), role } = {}) {
+  if (role && role !== ROLE_OWNER) {
+    throw badRequest('Chỉ chủ quán được duyệt đề xuất chỉnh sửa lương.');
+  }
+
   const proposal = await loadPending(maPH);
   const line = await loadLine(proposal.maPL, proposal.noiDung.maCTL);
 
@@ -554,6 +679,9 @@ async function approveProposal(maPH, { today = dt.todayISO() } = {}) {
         ngayDuyet: todayISO,
         maPLDich: isOverdue ? target.maPL : line.maPL,
         maBLDich: isOverdue ? target.maBL : line.maBL,
+        kyDich: isOverdue
+          ? `Tháng ${String(target.target.month).padStart(2, '0')}/${target.target.year}`
+          : null,
       },
     });
 
@@ -580,8 +708,13 @@ async function approveProposal(maPH, { today = dt.todayISO() } = {}) {
  *
  * @param {string} maPH
  * @param {string} [lyDo] lý do không duyệt (lưu trong JSON, không có cột riêng)
+ * @param {string} [role] vai trò người xử lý
  */
-async function rejectProposal(maPH, lyDo = '') {
+async function rejectProposal(maPH, lyDo = '', role) {
+  if (role && role !== ROLE_OWNER) {
+    throw badRequest('Chỉ chủ quán được từ chối đề xuất chỉnh sửa lương.');
+  }
+
   const proposal = await loadPending(maPH);
 
   const noiDung = JSON.stringify({
@@ -609,14 +742,22 @@ async function rejectProposal(maPH, lyDo = '') {
 
 module.exports = {
   STATUS,
+  PERIOD_APPROVED,
+  ROLE_OWNER,
   MSG_PROPOSED,
   MSG_APPROVED,
   MSG_CARRY,
   MSG_REJECTED,
   MSG_EMPTY,
   formatHoursShort,
+  proposalStatusMeta,
+  applyValues,
+  nextPeriodOf,
   createProposal,
   getReviewScreen,
+  countPendingProposals,
+  getPayslipProposals,
+  getProposalHistory,
   approveProposal,
   rejectProposal,
 };

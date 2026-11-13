@@ -1,0 +1,117 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý lương</span>
+        <span class="breadcrumb__sep">›</span>
+        <a href="<%= basePath %>/luong/cap-nhat">Cập nhật bảng lương</a>
+      </nav>
+
+      <section class="data-card">
+        <div class="data-card__head">
+          <h1 class="data-card__title">Chủ quán xét đề xuất</h1>
+          <span class="data-card__note">Đơn vị: VNĐ</span>
+        </div>
+
+        <% if (isEmpty) { %>
+          <div class="empty-state">
+            <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
+            <p class="empty-state__title"><%= emptyMessage %></p>
+            <a class="empty-state__action btn btn--secondary"
+               href="<%= basePath %>/luong/cap-nhat">Về danh sách phiếu lương</a>
+          </div>
+        <% } else { %>
+          <div class="proposal-list">
+            <% items.forEach(function (item) { %>
+              <article class="proposal">
+                <div class="proposal__head">
+                  <h2 class="proposal__person"><%= item.hoTen %></h2>
+                  <p class="proposal__meta">
+                    <%= item.kyLabel %> · <%= item.nguoiDeXuat %> đề xuất
+                    <% if (item.isOverdue) { %>
+                      · <span class="badge badge--warning">Quá hạn — kết chuyển kỳ sau</span>
+                    <% } %>
+                  </p>
+                </div>
+
+                <div class="proposal__body">
+                  <div class="table-wrap proposal__table">
+                    <table class="table table--rows">
+                      <thead>
+                        <tr>
+                          <th scope="col">Khoản điều chỉnh</th>
+                          <th scope="col">Phiếu hiện tại</th>
+                          <th scope="col">Đề xuất</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% item.rows.forEach(function (row) { %>
+                          <tr>
+                            <td><%= row.label %></td>
+                            <td><%= row.current %></td>
+                            <td class="u-strong"><%= row.proposed %></td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <aside class="proposal__side">
+                    <div class="proposal__reason">
+                      <h3 class="proposal__reason-title">Lý do của Quản lý</h3>
+                      <p class="proposal__reason-text"><%= item.lyDo %></p>
+                    </div>
+
+                    <div class="proposal__actions">
+                      <button type="button" class="btn btn--secondary"
+                              data-open-modal="#rejectProposal-<%= item.maPH %>">
+                        Không duyệt
+                      </button>
+                      <form method="post"
+                            action="<%= basePath %>/luong/cap-nhat/xet-de-xuat/<%= item.maPH %>/duyet">
+                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <button class="btn" type="submit">Duyệt</button>
+                      </form>
+                    </div>
+                  </aside>
+                </div>
+
+                <div class="modal-overlay" data-modal id="rejectProposal-<%= item.maPH %>" hidden>
+                  <div class="modal-card modal-card--form" role="dialog" aria-modal="true"
+                       aria-label="Lý do không duyệt đề xuất" tabindex="-1">
+                    <form method="post"
+                          action="<%= basePath %>/luong/cap-nhat/xet-de-xuat/<%= item.maPH %>/khong-duyet"
+                          novalidate data-validate-form>
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                      <div class="form-group">
+                        <label class="form-label" for="rejectReason-<%= item.maPH %>">Lý do</label>
+                        <textarea class="form-textarea" id="rejectReason-<%= item.maPH %>"
+                                  name="lyDo" rows="3"
+                                  data-required="Vui lòng nhập lý do."></textarea>
+                      </div>
+
+                      <div class="modal__actions">
+                        <button type="submit" class="btn">Gửi</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </article>
+            <% }); %>
+          </div>
+        <% } %>
+      </section>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot', { pageScripts: ['/js/manager.js'] }) %>

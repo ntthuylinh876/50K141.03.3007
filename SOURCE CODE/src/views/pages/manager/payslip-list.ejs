@@ -53,6 +53,79 @@
           </div>
         <% } %>
       </section>
+
+      <% if (pendingProposals > 0 && currentUser.role === 'owner') { %>
+        <div class="proposal-banner">
+          <div>
+            <p class="proposal-banner__title">
+              Có <%= pendingProposals %> đề xuất chỉnh sửa lương đang chờ duyệt
+            </p>
+            <p class="proposal-banner__text">
+              Quản lý đã đối chiếu chấm công và lịch làm, đề xuất điều chỉnh phiếu lương.
+            </p>
+          </div>
+          <a class="btn" href="<%= basePath %>/luong/cap-nhat/xet-de-xuat">Xét đề xuất</a>
+        </div>
+      <% } %>
+
+      <% if (history && history.length) { %>
+        <section class="data-card">
+          <div class="data-card__head">
+            <h2 class="data-card__title">Đề xuất chỉnh sửa lương</h2>
+            <span class="data-card__note">Lịch sử gần nhất</span>
+          </div>
+
+          <div class="table-wrap">
+            <table class="table table--rows table--stack">
+              <thead>
+                <tr>
+                  <th scope="col">Nhân viên</th>
+                  <th scope="col">Kỳ lương</th>
+                  <th scope="col">Ngày gửi</th>
+                  <th scope="col">Người đề xuất</th>
+                  <th scope="col">Lý do</th>
+                  <th scope="col">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% history.forEach(function (item) { %>
+                  <% var href = item.maPL ? basePath + '/luong/cap-nhat/' + item.maPL : ''; %>
+                  <tr<% if (href) { %> class="table__row--link" data-row-href="<%= href %>"<% } %>>
+                    <td data-label="Nhân viên">
+                      <span class="u-strong">
+                        <% if (href) { %>
+                          <a class="row-link" href="<%= href %>"><%= item.hoTen %></a>
+                        <% } else { %>
+                          <%= item.hoTen %>
+                        <% } %>
+                      </span>
+                    </td>
+                    <td data-label="Kỳ lương"><span><%= item.kyLabel %></span></td>
+                    <td data-label="Ngày gửi"><span class="u-nowrap"><%= item.ngayGui %></span></td>
+                    <td data-label="Người đề xuất"><span><%= item.nguoiDeXuat %></span></td>
+                    <td data-label="Lý do">
+                      <span class="proposal-history__reason">
+                        <%= item.lyDo %>
+                        <% if (item.carryLabel) { %>
+                          <span class="proposal-history__note">
+                            Quá hạn chi trả — chênh lệch kết chuyển vào <%= item.carryLabel %>.
+                          </span>
+                        <% } %>
+                        <% if (item.rejectReason) { %>
+                          <span class="proposal-history__note">Lý do từ chối: <%= item.rejectReason %></span>
+                        <% } %>
+                      </span>
+                    </td>
+                    <td data-label="Trạng thái">
+                      <span class="badge badge--<%= item.status.tone %>"><%= item.status.label %></span>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% } %>
     </main>
   </div>
 </div>

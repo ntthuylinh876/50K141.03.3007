@@ -33,6 +33,7 @@ const MANAGER_MENU = [
     children: [
       { key: 'approve-leave', label: 'Đơn xin nghỉ/đổi ca', href: '/quan-ly/duyet-don/xin-nghi-doi-ca' },
       { key: 'approve-cover', label: 'Đơn xin làm thay', href: '/quan-ly/duyet-don/lam-thay' },
+      { key: 'approve-advance', label: 'Duyệt ứng lương', href: '/quan-ly/duyet-don/ung-luong' },
     ],
   },
   {
@@ -52,6 +53,7 @@ const MANAGER_MENU = [
       { key: 'payroll-list', label: 'Bảng lương', href: '/quan-ly/luong/bang-luong' },
       { key: 'payroll-approve', label: 'Duyệt bảng lương', href: '/quan-ly/luong/duyet' },
       { key: 'payroll-update', label: 'Cập nhật bảng lương', href: '/quan-ly/luong/cap-nhat' },
+      { key: 'payroll-feedback', label: 'Phản hồi phiếu lương', href: '/quan-ly/luong/phan-hoi' },
     ],
   },
   { key: 'change-password', label: 'Đổi mật khẩu', href: '/doi-mat-khau', icon: 'lock' },

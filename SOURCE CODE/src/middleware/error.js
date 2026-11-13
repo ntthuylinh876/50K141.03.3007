@@ -5,7 +5,20 @@
  */
 
 const config = require('../config/env');
-const { wantsJson } = require('./auth');
+const { wantsJson, HOME_PATH } = require('./auth');
+const { APP_NAME } = require('./locals');
+
+/**
+ * Biến chung của trang lỗi. `viewLocals` có thể chưa chạy (lỗi CSRF/Wi-Fi xảy
+ * ra trước middleware đó) nên phải tự cung cấp giá trị mặc định.
+ */
+function errorLocals(req) {
+  const role = req.session?.user?.role;
+  return {
+    appName: APP_NAME,
+    homePath: (role && HOME_PATH[role]) || '/dang-nhap',
+  };
+}
 
 /** Không khớp route nào. */
 function notFoundHandler(req, res, next) {
@@ -13,6 +26,7 @@ function notFoundHandler(req, res, next) {
     return res.status(404).json({ ok: false, message: 'Không tìm thấy tài nguyên.' });
   }
   return res.status(404).render('pages/errors/error', {
+    ...errorLocals(req),
     title: 'Không tìm thấy trang',
     statusCode: 404,
     message: 'Trang bạn tìm không tồn tại hoặc đã bị di chuyển.',
@@ -42,6 +56,7 @@ function errorHandler(err, req, res, next) {
 
   if (status === 403 && err.code === 'WIFI_DENIED') {
     return res.status(403).render('pages/errors/wifi', {
+      ...errorLocals(req),
       title: 'Kết nối sai Wifi',
       message: err.message,
     });
@@ -52,6 +67,7 @@ function errorHandler(err, req, res, next) {
   }
 
   return res.status(status).render('pages/errors/error', {
+    ...errorLocals(req),
     title: isServerError ? 'Lỗi hệ thống' : 'Không thể thực hiện',
     statusCode: status,
     message: isServerError

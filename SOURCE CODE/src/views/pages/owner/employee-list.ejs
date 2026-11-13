@@ -1,0 +1,118 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý thông tin nhân viên</span>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current"><%= mode === 'edit' ? 'Sửa thông tin nhân viên' : 'Xóa nhân viên' %></span>
+      </nav>
+
+      <section class="data-card data-card--table">
+        <div class="data-card__head">
+          <div>
+            <h1 class="data-card__title">Quản lý nhân viên</h1>
+            <p class="data-card__subtitle">
+              <%= mode === 'edit'
+                    ? 'Chọn một nhân viên để sửa thông tin.'
+                    : 'Chọn nhân viên cần xóa khỏi danh sách làm việc.' %>
+            </p>
+          </div>
+          <span class="data-card__note"><%= employees.length %> nhân viên</span>
+        </div>
+
+        <% if (isEmpty) { %>
+          <div class="empty-state">
+            <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-users"></use></svg></span>
+            <p class="empty-state__title">Chưa có nhân viên nào.</p>
+            <a class="empty-state__action btn btn--secondary"
+               href="<%= basePath %>/nhan-vien/them">Thêm nhân viên</a>
+          </div>
+        <% } else { %>
+          <div class="table-wrap">
+            <table class="table table--rows table--tan table--stack">
+              <thead>
+                <tr>
+                  <th scope="col">Mã NV</th>
+                  <th scope="col">Họ và tên</th>
+                  <th scope="col">Số điện thoại</th>
+                  <th scope="col">Vị trí</th>
+                  <th scope="col">Ngày vào làm</th>
+                  <th scope="col">Tình trạng</th>
+                  <th scope="col">Mức lương</th>
+                  <th scope="col">Tài khoản ngân hàng</th>
+                  <% if (mode === 'delete') { %><th scope="col">Thao tác</th><% } %>
+                </tr>
+              </thead>
+              <tbody>
+                <% employees.forEach(function (item) { %>
+                  <% var editHref = basePath + '/nhan-vien/sua/' + encodeURIComponent(item.maNV); %>
+                  <tr<% if (mode === 'edit') { %> class="table__row--link" data-row-href="<%= editHref %>"<% } %>>
+                    <td data-label="Mã NV" class="u-nowrap u-strong">
+                      <% if (mode === 'edit') { %>
+                        <a class="row-link" href="<%= editHref %>"><%= item.maNV %></a>
+                      <% } else { %>
+                        <%= item.maNV %>
+                      <% } %>
+                    </td>
+                    <td data-label="Họ và tên"><%= item.hoTen %></td>
+                    <td data-label="Số điện thoại" class="u-nowrap"><%= item.soDienThoai %></td>
+                    <td data-label="Vị trí"><%= item.viTri %></td>
+                    <td data-label="Ngày vào làm" class="u-nowrap"><%= item.ngayVaoLamLabel %></td>
+                    <td data-label="Tình trạng">
+                      <span class="badge <%= item.tinhTrang === 'Chính thức' ? 'badge--success' : 'badge--warning' %>">
+                        <%= item.tinhTrang %>
+                      </span>
+                    </td>
+                    <td data-label="Mức lương" class="u-nowrap"><%= item.mucLuongLabel %></td>
+                    <td data-label="Tài khoản ngân hàng" class="u-nowrap"><%= item.nganHangLabel %></td>
+                    <% if (mode === 'delete') { %>
+                      <td data-label="Thao tác">
+                        <button type="button" class="btn btn--sm btn--danger"
+                                data-open-modal="#deleteEmployee-<%= item.maNV %>">
+                          <svg width="14" height="14" aria-hidden="true"><use href="#i-trash"></use></svg>
+                          Xóa
+                        </button>
+                      </td>
+                    <% } %>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </section>
+
+      <% if (mode === 'delete') { %>
+        <% employees.forEach(function (item) { %>
+          <div class="modal-overlay" data-modal id="deleteEmployee-<%= item.maNV %>" hidden>
+            <div class="modal-card modal-card--form" role="dialog" aria-modal="true"
+                 aria-label="Xác nhận xóa nhân viên" tabindex="-1">
+              <h2 class="modal-card__title">Xóa nhân viên này?</h2>
+              <p class="modal-card__text">
+                <strong><%= item.hoTen %></strong> (<%= item.maNV %>) sẽ không còn hiện trong danh sách
+                làm việc và không thể đăng nhập. Lịch sử lương vẫn được giữ lại.
+              </p>
+              <form method="post" action="<%= basePath %>/nhan-vien/xoa/<%= encodeURIComponent(item.maNV) %>">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div class="modal__actions">
+                  <button type="button" class="btn btn--light" data-modal-close>Hủy</button>
+                  <button type="submit" class="btn btn--danger">Xóa nhân viên</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        <% }); %>
+      <% } %>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot', { pageScripts: ['/js/manager.js'] }) %>

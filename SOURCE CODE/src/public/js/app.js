@@ -126,6 +126,14 @@
       if (event.key === 'Escape') close();
     });
 
+    // Nút [data-modal-close] (ví dụ "Hủy" trong hộp thoại xác nhận xóa).
+    overlay.querySelectorAll('[data-modal-close]').forEach(function (btn) {
+      btn.addEventListener('click', function (event) {
+        event.preventDefault();
+        close();
+      });
+    });
+
     if (card) {
       var firstField = card.querySelector('input:not([type="hidden"]), textarea, select');
       (firstField || card).focus();

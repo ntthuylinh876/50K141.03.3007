@@ -16,7 +16,6 @@ const { query, sql, withTransaction, txRequest } = require('../config/db');
 const { badRequest, notFound } = require('../utils/http-error');
 const dt = require('../utils/datetime');
 const fmt = require('../utils/format');
-const { nextMaCC } = require('../utils/id');
 
 /* -------------------------------------------------------------------------- */
 /* Thông báo                                                                   */
@@ -27,7 +26,6 @@ const MSG_APPROVED_FINAL = 'Bảng lương đã được duyệt!';
 const MSG_REJECTED = 'Không duyệt bảng lương!';
 const MSG_UPDATED = 'Cập nhật bảng lương thành công!';
 const MSG_NO_ERROR = 'Phát hiện không có sai sót với phiếu lương!';
-const MSG_CORRECTION = 'Chỉnh sửa phiếu lương cần duyệt!';
 const MSG_NO_PERIOD = 'Chưa có bảng lương nào!';
 const MSG_OWNER_APPROVES_FIRST = 'Chờ quản lý duyệt trước.';
 
@@ -136,6 +134,22 @@ async function getLatestPeriod() {
             (SELECT COUNT(*) FROM PhieuLuong pl WHERE pl.MaBL = bl.MaBL) AS SoPhieu
        FROM BangLuong bl
       ORDER BY bl.Nam DESC, bl.Thang DESC`,
+  );
+
+  const row = result.recordset[0];
+  return row ? mapPeriod(row) : null;
+}
+
+/** Kỳ lương gần nhất đã duyệt (dùng cho màn Cập nhật bảng lương — UC13.3). */
+async function getLatestApprovedPeriod() {
+  const result = await query(
+    `SELECT TOP 1 bl.MaBL, bl.Thang, bl.Nam, bl.TinhTrang,
+            bl.NgayBatDau, bl.NgayKetThuc, bl.NgayChiTra,
+            (SELECT COUNT(*) FROM PhieuLuong pl WHERE pl.MaBL = bl.MaBL) AS SoPhieu
+       FROM BangLuong bl
+      WHERE bl.TinhTrang = @status
+      ORDER BY bl.Nam DESC, bl.Thang DESC`,
+    { status: { type: sql.NVarChar(20), value: STATUS.APPROVED } },
   );
 
   const row = result.recordset[0];
@@ -533,7 +547,8 @@ async function updatePayrollLines(maBL, maPL, body, role) {
 
 /** Danh sách phiếu lương của một kỳ (màn Danh sách phiếu lương). */
 async function getPayslipList(maBL) {
-  const period = maBL ? await getPeriod(maBL) : await getLatestPeriod();
+  let period = maBL ? await getPeriod(maBL) : await getLatestApprovedPeriod();
+  if (!period && !maBL) period = await getLatestPeriod();
   if (!period) {
     return { period: null, periods: [], rows: [], isEmpty: true };
   }
@@ -706,88 +721,12 @@ async function getPayslipEditor(maPL, maCTL) {
   };
 }
 
-/**
- * Lưu đề xuất chỉnh sửa phiếu lương.
- *
- * - Ghi giờ vào/ra mới vào ChamCong (nguồn dữ liệu chấm công).
- * - Tính lại Số giờ làm và Phạt của dòng ChiTietLuong.
- * - Cập nhật tiền ứng (nếu có) và tính lại tổng hợp PhieuLuong.
- * - Lý do chỉnh sửa không có cột lưu trong CSDL → chỉ dùng cho thông báo.
- */
-async function savePayslipCorrection(maPL, maCTL, input) {
-  const line = await getLineContext(maPL, maCTL);
-
-  const gioVao = String(input.gioVao || '').trim();
-  const gioRa = String(input.gioRa || '').trim();
-  const phat = Number(input.phat);
-  const ung = Number(input.ung);
-
-  const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
-  const fieldErrors = {};
-  if (gioVao && !timePattern.test(gioVao)) fieldErrors.gioVao = 'Giờ vào không hợp lệ.';
-  if (gioRa && !timePattern.test(gioRa)) fieldErrors.gioRa = 'Giờ ra không hợp lệ.';
-  if (!Number.isFinite(phat) || phat < 0) fieldErrors.phat = 'Tiền phạt không hợp lệ.';
-  if (!Number.isFinite(ung) || ung < 0) fieldErrors.ung = 'Tiền ứng không hợp lệ.';
-  if (Object.keys(fieldErrors).length) {
-    throw badRequest('Vui lòng kiểm tra lại dữ liệu sửa.', fieldErrors);
-  }
-
-  const soGio = gioVao && gioRa ? dt.hoursBetween(gioVao, gioRa) : 0;
-
-  await withTransaction(async (tx) => {
-    const existing = await txRequest(tx)
-      .input('maLich', sql.Char(10), line.maLich)
-      .query('SELECT MaCC FROM ChamCong WHERE MaLich = @maLich');
-
-    if (existing.recordset.length) {
-      await txRequest(tx)
-        .input('maLich', sql.Char(10), line.maLich)
-        .input('gioVao', sql.VarChar(8), gioVao ? dt.toHMS(gioVao) : null)
-        .input('gioRa', sql.VarChar(8), gioRa ? dt.toHMS(gioRa) : null)
-        .query(
-          `UPDATE ChamCong SET GioVao = @gioVao, GioRa = @gioRa WHERE MaLich = @maLich`,
-        );
-    } else if (gioVao || gioRa) {
-      const maCC = await nextMaCC();
-
-      await txRequest(tx)
-        .input('maCC', sql.Char(10), maCC)
-        .input('maLich', sql.Char(10), line.maLich)
-        .input('gioVao', sql.VarChar(8), gioVao ? dt.toHMS(gioVao) : null)
-        .input('gioRa', sql.VarChar(8), gioRa ? dt.toHMS(gioRa) : null)
-        .query(
-          `INSERT INTO ChamCong (MaCC, MaLich, GioVao, GioRa)
-           VALUES (@maCC, @maLich, @gioVao, @gioRa)`,
-        );
-    }
-
-    await txRequest(tx)
-      .input('maCTL', sql.Char(10), line.maCTL)
-      .input('soGio', sql.Decimal(9, 2), soGio)
-      .input('phat', sql.Decimal(18, 2), Math.round(phat))
-      .query(
-        `UPDATE ChiTietLuong
-            SET SoGioLam = @soGio, PhatDiTre = @phat, PhatBoCa = 0
-          WHERE MaCTL = @maCTL`,
-      );
-
-    await txRequest(tx)
-      .input('maPL', sql.Char(10), line.maPL)
-      .input('ung', sql.Decimal(18, 2), Math.round(ung))
-      .query(`UPDATE PhieuLuong SET TienUngLuong = @ung WHERE MaPL = @maPL`);
-  });
-
-  await recalcPayslip(line.maPL);
-  return MSG_CORRECTION;
-}
-
 module.exports = {
   MSG_APPROVED,
   MSG_APPROVED_FINAL,
   MSG_REJECTED,
   MSG_UPDATED,
   MSG_NO_ERROR,
-  MSG_CORRECTION,
   MSG_NO_PERIOD,
   MSG_OWNER_APPROVES_FIRST,
   STATUS,
@@ -796,6 +735,7 @@ module.exports = {
   getPeriods,
   getPeriod,
   getLatestPeriod,
+  getLatestApprovedPeriod,
   getPayrollSummary,
   getPayrollDetail,
   getPayslipLines,
@@ -809,5 +749,4 @@ module.exports = {
   getComparison,
   confirmNoError,
   getPayslipEditor,
-  savePayslipCorrection,
 };

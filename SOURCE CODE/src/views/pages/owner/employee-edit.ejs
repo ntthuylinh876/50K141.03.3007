@@ -1,0 +1,159 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Quản lý thông tin nhân viên</span>
+        <span class="breadcrumb__sep">›</span>
+        <a href="<%= basePath %>/nhan-vien/sua">Sửa thông tin nhân viên</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current"><%= employee.maNV %></span>
+      </nav>
+
+      <section class="data-card">
+        <div class="data-card__head">
+          <div>
+            <h1 class="data-card__title">Hồ sơ <%= employee.maNV %></h1>
+            <p class="data-card__subtitle">
+              <%= employee.hoTen %>
+              <% if (employee.isResigned) { %>
+                · <span class="badge badge--danger">Đã nghỉ</span>
+              <% } %>
+            </p>
+          </div>
+        </div>
+
+        <form method="post" action="<%= basePath %>/nhan-vien/sua/<%= encodeURIComponent(employee.maNV) %>"
+              novalidate data-validate-form>
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+          <% if (error) { %>
+            <p class="form-alert" role="alert">
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-alert"></use></svg>
+              <%= error %>
+            </p>
+          <% } %>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="maNV">Mã nhân viên</label>
+              <input class="form-input" type="text" id="maNV" value="<%= form.maNV %>" readonly>
+              <p class="form-hint">Mã nhân viên không thể thay đổi.</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="hoTen">Họ tên <span class="req">*</span></label>
+              <input class="form-input <%= fieldErrors.hoTen ? 'is-invalid' : '' %>"
+                     type="text" id="hoTen" name="hoTen" value="<%= form.hoTen %>"
+                     maxlength="50" autocomplete="off"
+                     data-required="Vui lòng nhập họ tên.">
+              <% if (fieldErrors.hoTen) { %>
+                <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.hoTen %></p>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="soDienThoai">Số điện thoại <span class="req">*</span></label>
+              <input class="form-input <%= fieldErrors.soDienThoai ? 'is-invalid' : '' %>"
+                     type="tel" id="soDienThoai" name="soDienThoai" value="<%= form.soDienThoai %>"
+                     maxlength="10" inputmode="numeric" autocomplete="off"
+                     data-required="Vui lòng nhập số điện thoại.">
+              <% if (fieldErrors.soDienThoai) { %>
+                <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.soDienThoai %></p>
+              <% } %>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="viTri">Vị trí <span class="req">*</span></label>
+              <select class="form-select <%= fieldErrors.viTri ? 'is-invalid' : '' %>"
+                      id="viTri" name="viTri"
+                      data-required="Vui lòng chọn vị trí.">
+                <option value="">-- Chọn vị trí --</option>
+                <% positions.forEach(function (item) { %>
+                  <option value="<%= item %>" <%= form.viTri === item ? 'selected' : '' %>><%= item %></option>
+                <% }); %>
+              </select>
+              <% if (fieldErrors.viTri) { %>
+                <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.viTri %></p>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="ngayVaoLam">Ngày vào làm <span class="req">*</span></label>
+              <input class="form-input <%= fieldErrors.ngayVaoLam ? 'is-invalid' : '' %>"
+                     type="date" id="ngayVaoLam" name="ngayVaoLam" value="<%= form.ngayVaoLam %>"
+                     data-required="Vui lòng chọn ngày vào làm.">
+              <% if (fieldErrors.ngayVaoLam) { %>
+                <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.ngayVaoLam %></p>
+              <% } %>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="tinhTrang">Tình trạng <span class="req">*</span></label>
+              <select class="form-select <%= fieldErrors.tinhTrang ? 'is-invalid' : '' %>"
+                      id="tinhTrang" name="tinhTrang"
+                      data-required="Vui lòng chọn tình trạng.">
+                <% statuses.forEach(function (item) { %>
+                  <option value="<%= item %>" <%= form.tinhTrang === item ? 'selected' : '' %>><%= item %></option>
+                <% }); %>
+              </select>
+              <% if (fieldErrors.tinhTrang) { %>
+                <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.tinhTrang %></p>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="mucLuong">Mức lương <span class="req">*</span></label>
+              <input class="form-input <%= fieldErrors.mucLuong ? 'is-invalid' : '' %>"
+                     type="text" id="mucLuong" name="mucLuong" value="<%= form.mucLuong %>"
+                     inputmode="numeric" autocomplete="off"
+                     data-required="Vui lòng nhập mức lương.">
+              <p class="form-hint">Đơn giá giờ (đồng/giờ).</p>
+              <% if (fieldErrors.mucLuong) { %>
+                <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.mucLuong %></p>
+              <% } %>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="taiKhoanNganHang">Tài khoản ngân hàng nhận lương <span class="req">*</span></label>
+              <input class="form-input <%= fieldErrors.taiKhoanNganHang ? 'is-invalid' : '' %>"
+                     type="text" id="taiKhoanNganHang" name="taiKhoanNganHang"
+                     value="<%= form.taiKhoanNganHang %>" maxlength="72" autocomplete="off"
+                     data-required="Vui lòng nhập tài khoản ngân hàng.">
+              <p class="form-hint">Nhập theo dạng TENNGANHANG-SOTAIKHOAN.</p>
+              <% if (fieldErrors.taiKhoanNganHang) { %>
+                <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.taiKhoanNganHang %></p>
+              <% } %>
+            </div>
+          </div>
+
+          <div class="form-actions form-actions--between">
+            <a class="btn btn--light" href="<%= basePath %>/nhan-vien/sua">
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-arrow-left"></use></svg>
+              Hủy
+            </a>
+            <button class="btn" type="submit">
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-save"></use></svg>
+              Lưu
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

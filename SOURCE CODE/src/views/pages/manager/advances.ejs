@@ -1,0 +1,82 @@
+<%- include('../../partials/head') %>
+
+<div class="app-shell">
+  <%- include('../../partials/sidebar') %>
+
+  <div class="main">
+    <%- include('../../partials/topbar') %>
+
+    <main class="content">
+      <nav class="breadcrumb" aria-label="Đường dẫn">
+        <a href="<%= basePath %>/trang-chu">Trang chủ</a>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Duyệt đơn đăng ký</span>
+        <span class="breadcrumb__sep">›</span>
+        <span class="breadcrumb__current">Duyệt ứng lương</span>
+      </nav>
+
+      <section class="data-card">
+        <div class="data-card__head">
+          <div>
+            <h1 class="data-card__title">Yêu cầu ứng lương</h1>
+            <p class="data-card__subtitle">
+              Chỉ khoản đã duyệt mới được trừ vào phiếu lương của kỳ tương ứng.
+            </p>
+          </div>
+          <% if (pendingCount > 0) { %>
+            <span class="badge badge--warning"><%= pendingCount %> chờ duyệt</span>
+          <% } %>
+        </div>
+
+        <% if (isEmpty) { %>
+          <div class="empty-state">
+            <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-wallet"></use></svg></span>
+            <p class="empty-state__title"><%= emptyMessage %></p>
+          </div>
+        <% } else { %>
+          <ul class="approve-list">
+            <% rows.forEach(function (row) { %>
+              <li class="approve-item">
+                <div class="approve-item__main">
+                  <span class="approve-item__person">
+                    <svg width="22" height="22" aria-hidden="true"><use href="#i-user"></use></svg>
+                    <span class="approve-item__name"><%= row.hoTen %></span>
+                    <span class="approve-item__code"><%= row.maNV %></span>
+                  </span>
+                  <span class="approve-item__amount"><%= row.soTienLabel %></span>
+                </div>
+
+                <p class="approve-item__reason"><%= row.lyDo %></p>
+
+                <div class="approve-item__foot">
+                  <span class="approve-item__time">
+                    Gửi lúc <%= row.ngayGui %>
+                    <% if (row.nguoiDuyet) { %> · <%= row.nguoiDuyet %> đã xử lý<% } %>
+                  </span>
+                  <span class="badge badge--<%= row.status.tone %>"><%= row.status.label %></span>
+                </div>
+
+                <% if (row.isPending) { %>
+                  <div class="approve-item__actions">
+                    <form method="post"
+                          action="<%= basePath %>/duyet-don/ung-luong/<%= row.id %>/khong-duyet">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn btn--light" type="submit">Không duyệt</button>
+                    </form>
+                    <form method="post"
+                          action="<%= basePath %>/duyet-don/ung-luong/<%= row.id %>/duyet">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button class="btn" type="submit">Duyệt</button>
+                    </form>
+                  </div>
+                <% } %>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
+      </section>
+    </main>
+  </div>
+</div>
+
+<%- include('../../partials/foot') %>

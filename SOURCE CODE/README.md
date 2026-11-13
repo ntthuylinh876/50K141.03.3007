@@ -9,7 +9,7 @@ duyệt đơn từ, tổng hợp giờ làm và tính lương theo giờ.
 - **Hệ quản trị CSDL:** Microsoft SQL Server.
 - **Công nghệ:** Node.js + Express 5 + EJS (render phía máy chủ, không cần bước build).
 
-> **Trạng thái: đang ở Giai đoạn 1/6.** Xem mục [Phạm vi đã hoàn thành](#phạm-vi-đã-hoàn-thành-giai-đoạn-1).
+> **Trạng thái: đã xong Giai đoạn 1–4, đang rà soát Giai đoạn 5.** Xem mục [Phạm vi đã hoàn thành](#phạm-vi-đã-hoàn-thành-giai-đoạn-1) và `docs/PROGRESS.md`.
 
 ---
 
@@ -48,7 +48,7 @@ npm start          # http://localhost:3000
 | `npm run db:migrate` | Áp dụng thay đổi CSDL đã được duyệt (idempotent) |
 | `npm run db:seed` | Xóa và nạp lại toàn bộ dữ liệu mẫu |
 | `npm run db:setup` | `db:migrate` + `db:seed` |
-| `npm test` | Kiểm thử công thức tính lương (21 test) |
+| `npm test` | Kiểm thử tự động (66 test) |
 | `node scripts/smoke-test.js` | Kiểm tra khói 22 mục khi máy chủ đang chạy |
 
 ### Chuẩn bị CSDL lần đầu
@@ -113,9 +113,9 @@ Giai đoạn 1 là **nền tảng**: CSDL, xác thực, phân quyền, khung gia
   ca hôm nay. Thông báo: `Chấm công thành công!`, `Check out thành công!`, `Kết nối sai Wifi`.
 - **Trang chủ Quản lý / Chủ quán:** khung chào mừng + 2 thẻ điều hướng (đúng UI).
 - **Công thức tính lương** trong `src/utils/payroll.js` — hàm độc lập, có chú thích,
-  kiểm chứng bằng 21 unit test (`npm test`).
+  kiểm chứng bằng 66 unit test (`npm test` hoặc `node --test tests/`).
 - **Dữ liệu mẫu:** 10 nhân viên theo ảnh `Sửa thông tin nhân viên 1.png`, 3 ca làm,
-  504 ca trong 4 tháng, 359 bản ghi chấm công, 5 đơn nghỉ đã duyệt, các đơn chờ duyệt
+  504 ca trong 4 tháng, 367 bản ghi chấm công, 5 đơn nghỉ đã duyệt, các đơn chờ duyệt
   cho quản lý, 3 kỳ bảng lương (30 phiếu lương, 360 dòng chi tiết), 5 khoản ứng lương.
 - **Bảo mật:** câu lệnh SQL tham số hóa 100%, escape HTML khi render, helmet + CSP,
   session cookie `httpOnly`/`sameSite=lax`, `trust proxy` đặt theo số lớp proxy thật.
@@ -126,6 +126,14 @@ Giai đoạn 1 là **nền tảng**: CSDL, xác thực, phân quyền, khung gia
 
 Các mục menu chưa thuộc Giai đoạn 1 hiển thị trang "đang phát triển" kèm giai đoạn tương ứng
 (Giai đoạn 2: nghiệp vụ nhân viên; 3: quản lý; 4: chủ quán; 5: hoàn thiện).
+
+### Giai đoạn 2–4 đã hoàn thành
+
+| Vai trò | Nhóm chức năng |
+|---|---|
+| Nhân viên | Chấm công bổ sung, đăng ký ca, đơn xin nghỉ/đổi ca/làm thay, ứng lương, xem lịch, kiểm tra phiếu lương + gửi phản hồi |
+| Quản lý | Duyệt đơn nghỉ/đổi ca, duyệt làm thay, duyệt chấm công bổ sung, **duyệt ứng lương**, dữ liệu chấm công, bảng lương, duyệt bảng lương 2 bước, cập nhật bảng lương (gửi đề xuất), **xử lý phản hồi phiếu lương**, cập nhật/xem ca làm (có **áp dụng đăng ký ca**) |
+| Chủ quán | Kế thừa toàn bộ màn hình Quản lý (trừ Đổi mật khẩu) + **thêm/sửa/xóa nhân viên** (tự sinh tài khoản, xóa mềm) + duyệt bước 2 bảng lương + xét đề xuất chỉnh sửa lương |
 
 ## 5. Công thức tính lương (BR-UC13.1-01 … -09)
 
@@ -159,7 +167,7 @@ db/migrations/*.sql       thay đổi CSDL đã được duyệt
 db/seed.js                sinh dữ liệu mẫu
 scripts/migrate.js        chạy migration (tài khoản db_owner)
 scripts/smoke-test.js     kiểm tra khói 22 mục
-tests/payroll.test.js     21 unit test công thức lương
+tests/*.test.js           66 unit test (lương, sinh bảng lương, duyệt, đề xuất, nhân viên, ứng lương, phản hồi)
 src/config/               env, kết nối CSDL, cấu hình menu theo vai trò
 src/middleware/           auth (RBAC), csrf, wifi, flash, locals, error
 src/services/             nghiệp vụ (auth, attendance)
@@ -185,7 +193,7 @@ Toàn bộ chi tiết ở `docs/PHAN_TICH_BUOC0.md`, mục 13. Tóm tắt các t
 
 1. **`MucLuong` là đơn giá giờ** (đồng/giờ), không phải lương tháng — theo BR-UC13.1-04.
 2. **Xóa nhân viên là xóa mềm:** `TinhTrang = N'Đã nghỉ'`, chặn đăng nhập, giữ lịch sử lương.
-3. **Không lưu lịch sử sửa bảng lương**; `PhanHoiLuong` chỉ dùng cho phản hồi của nhân viên.
+3. **`PhanHoiLuong` dùng cho hai việc:** phản hồi sai sót của nhân viên (`NoiDungDeXuat IS NULL`) và đề xuất chỉnh sửa lương của quản lý (JSON trong `NoiDungDeXuat`). Hai màn hình xử lý tách biệt.
 4. **"Phương thức nghỉ"** suy ra từ khoảng ngày, không lưu thành cột.
 5. **Cột "Ứng" theo từng ca** hiển thị 0; tổng ứng nằm ở dòng tổng cuối bảng.
 6. **Điện thoại là duy nhất toàn hệ thống** (kiểm tra chéo cả `NhanVien` và `QuanLy`).
@@ -203,7 +211,8 @@ Toàn bộ chi tiết ở `docs/PHAN_TICH_BUOC0.md`, mục 13. Tóm tắt các t
 ## 9. Kiểm thử
 
 ```powershell
-npm test                        # 21 unit test công thức lương
+npm test                        # 66 unit test (lương, sinh bảng lương, duyệt, đề xuất, nhân viên, ứng lương, phản hồi)
+node --test tests/              # cùng bộ test, dùng khi npm bị chặn bởi ExecutionPolicy
 node scripts/smoke-test.js      # 22 kiểm tra đầu-cuối (cần máy chủ đang chạy)
 ```
 
@@ -220,7 +229,7 @@ check out, CSRF, đăng xuất, 404.
 |---|---|---|
 | 0 | Phân tích, kiến trúc, chốt mâu thuẫn | ✅ xong |
 | 1 | Khởi tạo dự án, CSDL, dữ liệu mẫu, xác thực, khung UI | ✅ xong |
-| 2 | Nghiệp vụ nhân viên (UC02–UC09) | ⏳ |
-| 3 | Nghiệp vụ quản lý (UC10–UC12) | ⏳ |
-| 4 | Nghiệp vụ chủ quán (UC13–UC16) | ⏳ |
-| 5 | Rà soát cuối, hoàn thiện tài liệu | ⏳ |
+| 2 | Nghiệp vụ nhân viên (UC02–UC09) | ✅ xong |
+| 3 | Nghiệp vụ quản lý (UC10–UC12) | ✅ xong |
+| 4 | Nghiệp vụ chủ quán (UC13–UC16) | ✅ xong — UC13.1/13.2/13.3 + UC14.1–14.3 |
+| 5 | Rà soát cuối, hoàn thiện tài liệu | ⏳ đang rà soát |
