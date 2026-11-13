@@ -48,13 +48,13 @@
 
             <div class="staff-list staff-list--registered">
               <% registered.forEach(function (nv) { %>
-                <label class="staff-row">
+                <label class="staff-row<%= isPast ? '' : ' is-picked' %>">
                   <input class="u-sr-only" type="checkbox" name="maNV" value="<%= nv.maNV %>"
-                         <%= isPast ? 'disabled' : 'checked' %>>
+                         data-register-pick <%= isPast ? 'disabled' : 'checked' %>>
                   <span class="staff-row__name"><%= nv.hoTen %></span>
-                  <span class="staff-pill staff-pill--apply">
-                    <svg aria-hidden="true"><use href="#i-plus"></use></svg>
-                    <span>Đăng ký</span>
+                  <span class="staff-pill staff-pill--apply" data-register-pill>
+                    <svg aria-hidden="true"><use href="#i-check"></use></svg>
+                    <span data-register-text>Đăng ký</span>
                   </span>
                 </label>
               <% }); %>

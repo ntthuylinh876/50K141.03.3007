@@ -37,7 +37,7 @@
           </div>
         <% } else { %>
           <div class="table-wrap">
-            <table class="table table--rows table--tan table--stack">
+            <table class="table table--rows table--tan table--stack table--compact">
               <thead>
                 <tr>
                   <th scope="col">Mã NV</th>
@@ -48,13 +48,12 @@
                   <th scope="col">Tình trạng</th>
                   <th scope="col">Mức lương</th>
                   <th scope="col">Tài khoản ngân hàng</th>
-                  <% if (mode === 'delete') { %><th scope="col">Thao tác</th><% } %>
                 </tr>
               </thead>
               <tbody>
                 <% employees.forEach(function (item) { %>
                   <% var editHref = basePath + '/nhan-vien/sua/' + encodeURIComponent(item.maNV); %>
-                  <tr<% if (mode === 'edit') { %> class="table__row--link" data-row-href="<%= editHref %>"<% } %>>
+                  <tr<% if (mode === 'edit') { %> class="table__row--link" data-row-href="<%= editHref %>"<% } else { %> class="table__row--link" tabindex="0" data-open-modal="#deleteEmployee-<%= item.maNV %>"<% } %>>
                     <td data-label="Mã NV" class="u-nowrap u-strong">
                       <% if (mode === 'edit') { %>
                         <a class="row-link" href="<%= editHref %>"><%= item.maNV %></a>
@@ -64,7 +63,7 @@
                     </td>
                     <td data-label="Họ và tên"><%= item.hoTen %></td>
                     <td data-label="Số điện thoại" class="u-nowrap"><%= item.soDienThoai %></td>
-                    <td data-label="Vị trí"><%= item.viTri %></td>
+                    <td data-label="Vị trí" class="u-nowrap"><%= item.viTri %></td>
                     <td data-label="Ngày vào làm" class="u-nowrap"><%= item.ngayVaoLamLabel %></td>
                     <td data-label="Tình trạng">
                       <span class="badge <%= item.tinhTrang === 'Chính thức' ? 'badge--success' : 'badge--warning' %>">
@@ -74,11 +73,11 @@
                     <td data-label="Mức lương" class="u-nowrap"><%= item.mucLuongLabel %></td>
                     <td data-label="Tài khoản ngân hàng" class="u-nowrap"><%= item.nganHangLabel %></td>
                     <% if (mode === 'delete') { %>
-                      <td data-label="Thao tác">
-                        <button type="button" class="btn btn--sm btn--danger"
+                      <td class="cell--stack-only">
+                        <button type="button" class="btn btn--sm btn--danger-outline btn--block"
                                 data-open-modal="#deleteEmployee-<%= item.maNV %>">
                           <svg width="14" height="14" aria-hidden="true"><use href="#i-trash"></use></svg>
-                          Xóa
+                          Xóa nhân viên
                         </button>
                       </td>
                     <% } %>
@@ -93,9 +92,13 @@
       <% if (mode === 'delete') { %>
         <% employees.forEach(function (item) { %>
           <div class="modal-overlay" data-modal id="deleteEmployee-<%= item.maNV %>" hidden>
-            <div class="modal-card modal-card--form" role="dialog" aria-modal="true"
-                 aria-label="Xác nhận xóa nhân viên" tabindex="-1">
-              <h2 class="modal-card__title">Xóa nhân viên này?</h2>
+            <div class="modal-card modal-card--form modal-card--confirm" role="dialog" aria-modal="true"
+                 aria-labelledby="deleteEmployeeTitle-<%= item.maNV %>" tabindex="-1">
+              <span class="modal-card__icon">
+                <svg aria-hidden="true"><use href="#i-trash"></use></svg>
+              </span>
+              <h2 class="modal-card__title" id="deleteEmployeeTitle-<%= item.maNV %>">Xóa nhân viên này?</h2>
+              <hr class="modal-card__divider">
               <p class="modal-card__text">
                 <strong><%= item.hoTen %></strong> (<%= item.maNV %>) sẽ không còn hiện trong danh sách
                 làm việc và không thể đăng nhập. Lịch sử lương vẫn được giữ lại.
@@ -104,7 +107,10 @@
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="modal__actions">
                   <button type="button" class="btn btn--light" data-modal-close>Hủy</button>
-                  <button type="submit" class="btn btn--danger">Xóa nhân viên</button>
+                  <button type="submit" class="btn btn--danger-outline">
+                    <svg width="16" height="16" aria-hidden="true"><use href="#i-trash"></use></svg>
+                    Xóa nhân viên
+                  </button>
                 </div>
               </form>
             </div>

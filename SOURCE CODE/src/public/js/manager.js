@@ -48,7 +48,7 @@
   /* Mở hộp thoại nhập lý do                                             */
   /* ------------------------------------------------------------------ */
   document.querySelectorAll('[data-open-modal]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
+    var open = function () {
       var selector = btn.getAttribute('data-open-modal');
       var overlay = selector ? document.querySelector(selector) : null;
       if (!overlay) return;
@@ -58,7 +58,38 @@
       var card = overlay.querySelector('.modal-card');
       var field = card && card.querySelector('input:not([type="hidden"]), textarea, select');
       (field || card || overlay).focus();
-    });
+    };
+
+    btn.addEventListener('click', open);
+
+    // Dòng bảng cũng có thể mở hộp thoại: hỗ trợ bàn phím như một nút.
+    if (btn.tagName !== 'BUTTON' && btn.tagName !== 'A') {
+      btn.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        open();
+      });
+    }
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Chọn nhân viên đăng ký ca để áp dụng vào lịch (M3)                  */
+  /* ------------------------------------------------------------------ */
+  document.querySelectorAll('[data-register-pick]').forEach(function (checkbox) {
+    var row = checkbox.closest('.staff-row');
+    if (!row) return;
+
+    var text = row.querySelector('[data-register-text]');
+    var use = row.querySelector('[data-register-pill] use');
+
+    var sync = function () {
+      row.classList.toggle('is-picked', checkbox.checked);
+      if (text) text.textContent = checkbox.checked ? 'Đăng ký' : 'Bỏ chọn';
+      if (use) use.setAttribute('href', checkbox.checked ? '#i-check' : '#i-plus');
+    };
+
+    checkbox.addEventListener('change', sync);
+    sync();
   });
 
   /* ------------------------------------------------------------------ */

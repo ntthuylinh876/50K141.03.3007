@@ -2373,6 +2373,7 @@ button.shift-cell { font: inherit; }
 .registered-card .form-actions { margin-top: var(--space-4); }
 .staff-list--registered { margin-top: var(--space-3); }
 .staff-pill--apply { background: var(--blue-soft); color: var(--blue); }
+.staff-row.is-picked .staff-pill--apply { background: var(--green-soft); color: #0d7a3d; }
 .registered-hint { margin: 0 0 var(--space-5); }
 
 /* --------------------------------------------------------------------------
@@ -2449,6 +2450,39 @@ button.shift-cell { font: inherit; }
   color: var(--text-body);
   font-size: var(--text-sm);
 } 
+
+/* Hộp thoại xác nhận xóa nhân viên (O6) — theo ảnh "Xóa nhân viên 2" */
+.modal-card--confirm {
+  width: min(92vw, 540px);
+  padding: 32px;
+}
+
+.modal-card--confirm .modal-card__icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 0 18px;
+  border-radius: 12px;
+}
+
+.modal-card--confirm .modal-card__icon svg { width: 22px; height: 22px; }
+
+.modal-card__divider {
+  margin: var(--space-4) 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.modal-card--confirm .modal__actions { margin-top: 0; }
+
+/* Bảng nhiều cột (danh sách nhân viên): thu hẹp khoảng đệm ngang cho vừa khung */
+.table--compact thead th,
+.table--compact tbody td {
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+}
+
+/* Gợi ý "Xóa" trên thẻ nhân viên — chỉ hiện ở bố cục điện thoại */
+.cell--stack-only { display: none; }
 
 /* --------------------------------------------------------------------------
    Responsive — breakpoint 1024px (máy tính bảng / điện thoại) và 640px.
@@ -2830,6 +2864,13 @@ button.shift-cell { font: inherit; }
     font-weight: 400;
   }
   .table--stack .proposal-history__reason { max-width: none; }
+
+  /* Dòng bảng bấm được (xóa nhân viên): nút thao tác ngay trên thẻ */
+  .table--stack .cell--stack-only {
+    display: block;
+    padding-top: var(--space-3);
+  }
+  .table--stack .cell--stack-only::before { content: none; }
 
   /* --- Duyệt ứng lương / phản hồi phiếu lương trên điện thoại ---------- */
   .approve-list { padding: 0 var(--space-4) var(--space-5); }
