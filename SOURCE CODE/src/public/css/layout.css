@@ -47,6 +47,46 @@
 }
 
 /* --------------------------------------------------------------------------
+   Hạt cà phê dùng chung — hai đường kẻ + hạt ở giữa (sidebar, màn Đăng nhập)
+   Hình hạt chuẩn vẽ theo doc/UI/Hatcaphe.png (cặp hạt 90x60).
+   -------------------------------------------------------------------------- */
+
+.coffee-divider {
+  --coffee-bean-size: 76px;
+  --coffee-divider-line: var(--gold-soft);
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  width: 100%;
+  color: var(--brown-700);
+}
+
+.coffee-divider__line {
+  flex: 1 1 0;
+  height: 1px;
+  background: var(--coffee-divider-line);
+}
+
+.coffee-divider .coffee-bean-svg {
+  display: block;
+  flex: none;
+  width: var(--coffee-bean-size);
+  height: auto;
+}
+
+/* Cỡ hạt: nhỏ (1 hạt dưới nút Đăng nhập), vừa (trên tiêu đề), lớn (panel trái) */
+.coffee-divider--sm { --coffee-bean-size: 26px; gap: 15px; }
+.coffee-divider--md { --coffee-bean-size: 76px; }
+.coffee-divider--lg { --coffee-bean-size: 90px; gap: 21px; }
+
+/* Hạt trong trạng thái rỗng của trang "đang hoàn thiện" */
+.empty-state__icon .coffee-bean-svg {
+  width: 44px;
+  height: auto;
+  color: var(--sand-300);
+}
+
+/* --------------------------------------------------------------------------
    Sidebar — thẻ nâu nổi, bo tròn (như ảnh thiết kế)
    -------------------------------------------------------------------------- */
 
@@ -173,7 +213,7 @@
 }
 
 .nav-item__chevron--right { transform: rotate(-90deg); }
-.nav-item[aria-expanded='true'] .nav-item__chevron--right { transform: rotate(90deg); }
+.nav-item[aria-expanded='true'] .nav-item__chevron--right { transform: rotate(0deg); }
 
 .nav-sub {
   display: none;
@@ -192,28 +232,26 @@
 }
 
 .nav-sub .nav-item.is-active {
-  background: rgba(255, 255, 255, 0.16);
-  color: var(--white);
+  background: var(--white);
+  color: #5a2d14;
+  font-weight: 600;
   box-shadow: none;
-}
-
-.nav-sub .nav-item::before {
-  content: '';
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.6;
-  flex: none;
 }
 
 .sidebar__footer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
+  gap: 22px;
   margin-top: auto;
   padding-top: 40px;
+}
+
+.sidebar__footer .coffee-divider {
+  --coffee-bean-size: 52px;
+  --coffee-divider-line: var(--brown-700);
+  gap: 19px;
+  color: var(--brown-800);
 }
 
 .sidebar__logout {
@@ -234,28 +272,6 @@
 
 .sidebar__logout:hover { background: #47220f; }
 .sidebar__logout svg { width: 17px; height: 17px; }
-
-.sidebar__bean {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  --bean-crease: var(--brown-500);
-}
-
-.sidebar__bean::before,
-.sidebar__bean::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(61, 31, 14, 0.42);
-}
-
-.sidebar__bean svg {
-  width: 34px;
-  height: 34px;
-  color: var(--brown-800);
-}
 
 /* --------------------------------------------------------------------------
    Topbar
@@ -489,6 +505,19 @@
   background: var(--card-bg);
 }
 
+/* Thẻ lịch làm việc ở trang chủ mở màn "Xem lịch làm việc" */
+a.week-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+a.week-card:hover {
+  border-color: var(--sand-300);
+  box-shadow: var(--shadow-sm);
+}
+
 .week-card__head {
   display: flex;
   align-items: center;
@@ -615,6 +644,90 @@
   color: var(--brown-700);
 }
 
+/* Thông báo dạng thẻ hồng (ảnh "Bạn chưa có ca làm việc nào trong tuần này") */
+.modal-card--notice {
+  width: min(90vw, 820px);
+  padding: 54px 40px;
+  border: 1px solid #e05252;
+  border-radius: 8px;
+  background: #fdeeec;
+  box-shadow: none;
+}
+
+.modal-card--notice .modal-card__icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 22px;
+  border-radius: 50%;
+  background: #fadfdd;
+  color: var(--red);
+}
+
+.modal-card--notice .modal-card__icon svg { width: 22px; height: 22px; }
+
+.modal-card--notice .modal-card__bang {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 22px;
+  background: #fadfdd;
+}
+
+.modal-card--notice .modal-card__message {
+  font-family: var(--font-body);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+/* Phiếu lương chưa được duyệt: thông báo khoá màn hình (ảnh "Kiểm tra phiếu lương 3") */
+.card--locked-placeholder {
+  min-height: 420px;
+  margin-top: var(--space-6);
+}
+
+.modal-overlay--locked { background: rgba(61, 31, 14, 0.34); }
+
+.modal-card--locked {
+  width: min(90vw, 500px);
+  padding: 50px 40px;
+  border: 1px solid #e05252;
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: none;
+}
+
+.modal-card__bang {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 22px;
+  border-radius: 50%;
+  background: #fbe0e0;
+  color: #d63b3b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.modal-card--locked .modal-card__message {
+  font-family: var(--font-body);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.5;
+  color: #3d1f0e;
+}
+
+.modal-overlay__back {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  background: var(--white);
+  border-color: var(--sand-200);
+  color: var(--brown-700);
+}
+.modal-overlay__back:hover { background: var(--sand-50); }
+
 /* --------------------------------------------------------------------------
    Trang đăng nhập — bố cục 2 cột theo ảnh doc/UI/Đăng nhập
    -------------------------------------------------------------------------- */
@@ -632,7 +745,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: 52px 60px 44px;
+  padding: 52px 60px clamp(44px, 15.4vh, 140px);
   background: var(--brown-500);
   color: var(--text-on-dark);
   overflow: hidden;
@@ -641,8 +754,9 @@
 .auth-brand {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
-  font-family: var(--font-display);
+  font-family: var(--font-serif);
   font-size: clamp(1.5rem, 2.6vw, 2.125rem);
   line-height: 1;
   letter-spacing: 0.02em;
@@ -663,30 +777,17 @@
 
 .auth-art svg { width: min(330px, 74%); height: auto; }
 
-.auth-beans {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  --bean-crease: var(--brown-500);
-  color: var(--brown-700);
+/* --- Divider hạt cà phê ở cuối panel trái -------------------------------- */
+
+.auth-aside__divider {
+  width: min(334px, 100%);
+  margin: 0 auto;
 }
 
-.auth-beans::before,
-.auth-beans::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(61, 31, 14, 0.4);
+.auth-aside__divider .coffee-divider {
+  --coffee-divider-line: rgba(61, 31, 14, 0.75);
+  color: var(--brown-800);
 }
-
-.auth-beans .bean { width: 46px; height: 46px; }
-.auth-beans .bean--sm { width: 34px; height: 34px; }
-
-/* --- Hạt cà phê trang trí ------------------------------------------------- */
-
-.bean { display: block; color: var(--brown-700); }
-.bean--sm { width: 0.72em; height: 0.72em; }
 
 /* --- Cột phải: biểu mẫu -------------------------------------------------- */
 
@@ -704,29 +805,14 @@
 }
 
 .auth-ornament {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  --bean-crease: var(--white);
+  width: min(316px, 100%);
+  margin: 0 auto;
 }
-
-.auth-ornament::before,
-.auth-ornament::after {
-  content: '';
-  width: 96px;
-  height: 1px;
-  margin-inline: 12px;
-  background: var(--gold-soft);
-}
-
-.auth-ornament .bean { width: 34px; height: 34px; }
-.auth-ornament .bean--sm { width: 24px; height: 24px; }
 
 .auth-heading {
   margin-top: 18px;
   display: block;
-  font-family: var(--font-display);
+  font-family: var(--font-serif);
   color: var(--brown-700);
 }
 
@@ -820,7 +906,7 @@
   border-radius: var(--radius-pill);
   background: #5a2d14;
   color: var(--text-on-dark);
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-size: 1.125rem;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -831,23 +917,9 @@
 .auth-submit:active { transform: translateY(1px); }
 
 .auth-meta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin-top: 28px;
-  --bean-crease: var(--white);
+  width: min(382px, 100%);
+  margin: 30px auto 0;
 }
-
-.auth-meta::before,
-.auth-meta::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--gold-soft);
-}
-
-.auth-meta .bean { width: 26px; height: 26px; }
 
 .auth-address {
   margin-top: 8px;
@@ -1112,7 +1184,8 @@ button.shift-cell { font: inherit; }
   text-align: center;
 }
 
-.swap-card--has { background: var(--brown-400); border-color: var(--brown-400); }
+.swap-card--has { background: var(--brown-500); border-color: var(--brown-500); }
+.swap-card--has.swap-card--today { background: #3d1f0e; border-color: #3d1f0e; }
 .swap-card--off { background: var(--sand-50); }
 
 .swap-card__pill {
@@ -1135,6 +1208,11 @@ button.shift-cell { font: inherit; }
 }
 
 .swap-card__arrow { display: none; color: var(--white); }
+.swap-card--has:hover .swap-card__arrow {
+  display: grid;
+  place-items: center;
+  transform: rotate(-45deg);
+}
 .swap-card.is-selected { background: var(--brown-700); border-color: var(--brown-700); }
 .swap-card.is-selected .swap-card__arrow {
   display: grid;
@@ -1144,16 +1222,27 @@ button.shift-cell { font: inherit; }
 
 /* --- Đổi ca: khung tìm kiếm + danh sách đồng nghiệp (7.2.1.25) --------- */
 .swap-panel {
-  padding: 18px;
-  border: 2px solid var(--brown-700);
-  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  border: 1px solid #e6d3c5;
+  border-radius: 16px;
+  background: var(--white);
+}
+
+.swap-panel--plain { background: var(--white); }
+
+.swap-panel__title {
+  margin-bottom: 18px;
+  color: var(--brown-700);
+  font-size: var(--text-base);
+  font-weight: 700;
 }
 
 /* --- Đổi ca: lịch tuần của đồng nghiệp (7.2.1.26) ---------------------- */
 .pick-panel {
-  padding: 18px 20px 22px;
-  border: 1px solid #e2c9b5;
-  border-radius: var(--radius-lg);
+  padding: 20px 22px 24px;
+  border: 1px solid #e8d5c5;
+  border-radius: 16px;
+  background: #fdf6ef;
 }
 
 .pick-panel__title {
@@ -1261,6 +1350,8 @@ button.shift-cell { font: inherit; }
   background: #fdf3e7;
 }
 .cover-table tbody td form { display: flex; justify-content: center; }
+.cover-table .btn { background: #4c2d19; }
+.cover-table .btn:hover { background: #3d1f0e; }
 
 /* --- Lịch làm việc dạng thẻ ngày --------------------------------------- */
 .sched-grid {
@@ -1336,6 +1427,11 @@ button.shift-cell { font: inherit; }
   color: var(--text-muted);
 }
 .search-field .form-input { padding-left: 42px; }
+
+.swap-search .form-input {
+  background: var(--sand-50);
+  border-color: #efdfd2;
+}
 
 /* Danh sách đồng nghiệp (7.2.1.25): mỗi dòng là icon người + họ tên */
 .people-list {
@@ -2429,7 +2525,7 @@ button.shift-cell { font: inherit; }
 .account-created__row dt { color: var(--brown-700); font-weight: 600; }
 .account-created__row dd { margin: 0; }
 .account-created__row code {
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-body);
   font-size: var(--text-md);
   font-weight: 700;
   letter-spacing: 0.04em;

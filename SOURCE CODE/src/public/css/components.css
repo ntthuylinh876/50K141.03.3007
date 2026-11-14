@@ -222,6 +222,10 @@
   font-size: var(--text-xs);
 }
 
+.form-error > svg {
+  flex: none;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -533,7 +537,8 @@
   font-weight: 600;
 }
 .tabs--equal .tabs__item:hover { background: var(--sand-100); }
-.tabs--equal .tabs__item.is-active { background: var(--brown-600); color: var(--white); }
+.tabs--equal .tabs__item.is-active { background: #4c2d19; color: var(--white); }
+.tabs--equal .tabs__item.is-active:hover { background: #4c2d19; }
 
 /* --------------------------------------------------------------------------
    Thẻ số liệu

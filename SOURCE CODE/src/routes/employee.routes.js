@@ -227,7 +227,7 @@ async function requestsData(req) {
     selectedShift,
     selectedColleague,
     colleagueWeek,
-    form: { maLich: '', phuongThuc: 'ca', lyDo: '' },
+    form: { maLich: '', phuongThuc: 'ngay', lyDo: '' },
     fieldErrors: {},
     error: null,
   };
@@ -256,7 +256,7 @@ router.post('/don-yeu-cau/xin-nghi', async (req, res, next) => {
         tab: 'leave',
         form: {
           maLich: req.body.maLich || '',
-          phuongThuc: req.body.phuongThuc || 'ca',
+          phuongThuc: req.body.phuongThuc || 'ngay',
           lyDo: req.body.lyDo || '',
         },
       }, err);

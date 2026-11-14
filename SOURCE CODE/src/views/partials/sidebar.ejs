@@ -40,19 +40,7 @@
     <% }); %>
   </nav>
 
-  <div class="sidebar__footer">
-    <form method="post" action="/dang-xuat">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <button type="submit" class="sidebar__logout">
-        <svg aria-hidden="true"><use href="#i-logout"></use></svg>
-        <span>Đăng xuất</span>
-      </button>
-    </form>
-    <div class="sidebar__bean" aria-hidden="true">
-      <svg><use href="#i-bean-fill"></use></svg>
-      <svg style="width:26px;height:26px"><use href="#i-bean-fill"></use></svg>
-    </div>
-  </div>
+  <%- include('sidebar-footer') %>
 </aside>
 
 <div class="nav-scrim" data-nav-close aria-hidden="true"></div>

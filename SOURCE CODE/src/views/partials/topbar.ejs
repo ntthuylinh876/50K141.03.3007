@@ -16,17 +16,6 @@
   </div>
 
   <div class="topbar__right">
-    <% if (demoMode && currentUser) { %>
-      <form method="post" action="/demo/wifi" class="demo-wifi">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <label class="switch" title="Công tắc mô phỏng kết nối Wi-Fi của quán (chỉ hiện khi DEMO_MODE=true)">
-          <input type="checkbox" name="enabled" value="1" data-auto-submit <%= onCafeWifi ? 'checked' : '' %>>
-          <span class="switch__track"></span>
-          <span class="<%= onCafeWifi ? '' : 'u-text-red' %>">Wi-Fi quán</span>
-        </label>
-      </form>
-    <% } %>
-
     <div class="topbar__greeting">
       <span class="topbar__greeting-label">Xin chào,</span>
       <span class="topbar__greeting-name"><%= currentUser ? currentUser.shortName : '' %></span>

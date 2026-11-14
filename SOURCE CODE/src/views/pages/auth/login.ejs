@@ -8,7 +8,7 @@
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,500;1,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Afacad:wght@400..700&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/tokens.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/components.css">
@@ -47,9 +47,8 @@
       </svg>
     </div>
 
-    <div class="auth-beans" aria-hidden="true">
-      <svg class="bean"><use href="#i-bean-fill"></use></svg>
-      <svg class="bean bean--sm"><use href="#i-bean-fill"></use></svg>
+    <div class="auth-aside__divider">
+      <%- include('../../partials/coffee-divider', { count: 2, size: 'lg' }) %>
     </div>
   </aside>
 
@@ -58,9 +57,8 @@
   <!-- ---------------------------------------------------------------- -->
   <section class="auth-main">
     <div class="auth-card">
-      <div class="auth-ornament" aria-hidden="true">
-        <svg class="bean"><use href="#i-bean-fill"></use></svg>
-        <svg class="bean bean--sm"><use href="#i-bean-fill"></use></svg>
+      <div class="auth-ornament">
+        <%- include('../../partials/coffee-divider', { count: 2, size: 'md' }) %>
       </div>
 
       <h1 class="auth-heading">
@@ -110,8 +108,8 @@
         <button type="submit" class="auth-submit">Đăng nhập</button>
       </form>
 
-      <div class="auth-meta" aria-hidden="true">
-        <svg class="bean bean--sm"><use href="#i-bean-fill"></use></svg>
+      <div class="auth-meta">
+        <%- include('../../partials/coffee-divider', { count: 1, size: 'sm' }) %>
       </div>
       <p class="auth-address">311 Hồ Nghinh, Sơn Trà, Đà Nẵng</p>
 

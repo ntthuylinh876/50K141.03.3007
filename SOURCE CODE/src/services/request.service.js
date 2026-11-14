@@ -333,6 +333,7 @@ async function createLeave(maNV, payload) {
   const maLich = String(payload.maLich || '').trim();
   const lyDo = String(payload.lyDo || '').trim();
   const caNgay = payload.phuongThuc === 'ngay';
+  const caTuan = payload.phuongThuc === 'tuan';
 
   if (!maLich || !lyDo) {
     throw badRequest(MSG_REQUIRED, {
@@ -354,17 +355,34 @@ async function createLeave(maNV, payload) {
   const shift = shiftResult.recordset[0];
   if (!shift) throw notFound('Không tìm thấy ca làm của bạn.');
 
-  // Phương thức nghỉ (C14): nghỉ cả ngày = mọi ca của ngày đó,
-  // nghỉ theo ca = chỉ ca được chọn.
-  const targetResult = caNgay
-    ? await query(
+  // Phương thức nghỉ (C14): nghỉ ngày = mọi ca của ngày đó,
+  // nghỉ tuần = mọi ca trong tuần của ca được chọn, còn lại là nghỉ theo ca.
+  const tuNgay = caTuan ? dt.startOfWeekISO(shift.NgayISO) : shift.NgayISO;
+  const denNgay = caTuan ? dt.endOfWeekISO(shift.NgayISO) : shift.NgayISO;
+
+  let targetResult;
+  if (caTuan) {
+    targetResult = await query(
+      `SELECT MaLich FROM LichLamViec
+        WHERE MaNV = @maNV AND NgayLam BETWEEN @tuNgay AND @denNgay
+        ORDER BY NgayLam`,
+      {
+        maNV: { type: sql.Char(10), value: maNV },
+        tuNgay: { type: sql.VarChar(10), value: tuNgay },
+        denNgay: { type: sql.VarChar(10), value: denNgay },
+      },
+    );
+  } else if (caNgay) {
+    targetResult = await query(
       `SELECT MaLich FROM LichLamViec WHERE MaNV = @maNV AND NgayLam = @ngay`,
       {
         maNV: { type: sql.Char(10), value: maNV },
         ngay: { type: sql.VarChar(10), value: shift.NgayISO },
       },
-    )
-    : { recordset: [{ MaLich: shift.MaLich }] };
+    );
+  } else {
+    targetResult = { recordset: [{ MaLich: shift.MaLich }] };
+  }
 
   const maXN = await nextMaXN();
 
@@ -372,8 +390,8 @@ async function createLeave(maNV, payload) {
     await txRequest(tx)
       .input('maXN', sql.Char(10), maXN)
       .input('lyDo', sql.NVarChar(510), lyDo)
-      .input('tuNgay', sql.VarChar(10), shift.NgayISO)
-      .input('denNgay', sql.VarChar(10), shift.NgayISO)
+      .input('tuNgay', sql.VarChar(10), tuNgay)
+      .input('denNgay', sql.VarChar(10), denNgay)
       .input('maNV', sql.Char(10), maNV)
       .query(`INSERT INTO DonXinNghi
                 (MaXN, NgayGui, LyDo, TrangThai, NgayBatDau, NgayKetThuc, MaNV, MaQL)

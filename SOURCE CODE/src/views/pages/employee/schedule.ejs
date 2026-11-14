@@ -30,12 +30,14 @@
             </div>
           </div>
 
-          <% if (emptyMessage) { %>
-            <p class="form-alert" role="alert">
-              <svg width="16" height="16" aria-hidden="true"><use href="#i-alert"></use></svg>
-              <%= emptyMessage %>
-            </p>
-          <% } %>
+      <% if (emptyMessage) { %>
+        <div class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-live="assertive">
+          <div class="modal-card modal-card--notice" tabindex="-1">
+            <span class="modal-card__bang" aria-hidden="true">!</span>
+            <p class="modal-card__message"><%= emptyMessage %></p>
+          </div>
+        </div>
+      <% } %>
 
           <div class="sched-grid">
             <% days.forEach(function (day) { %>

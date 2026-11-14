@@ -75,8 +75,12 @@
   --space-9: 56px;
 
   /* --- Kiểu chữ --- */
-  --font-display: 'Playfair Display', 'Times New Roman', serif;
-  --font-body: 'Be Vietnam Pro', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* Afacad là font mặc định toàn hệ thống (nội dung + tiêu đề).
+     Fallback sans-serif giữ chữ tiếng Việt đọc được nếu Google Fonts lỗi. */
+  --font-body: 'Afacad', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-body);
+  /* Ngoại lệ: 3 tiêu đề màn đăng nhập dùng lại Playfair Display theo ảnh UI. */
+  --font-serif: 'Playfair Display', 'Times New Roman', serif;
 
   --text-xs: 0.75rem;   /* 12px */
   --text-sm: 0.8125rem; /* 13px */

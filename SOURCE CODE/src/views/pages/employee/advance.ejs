@@ -64,40 +64,6 @@
           </form>
         </div>
       </section>
-
-      <% if (history.length) { %>
-        <section class="card u-mt-6">
-          <div class="card__header">
-            <h2 class="card__title">Lịch sử ứng lương</h2>
-          </div>
-          <div class="table-wrap">
-            <table class="table table--compact">
-              <thead>
-                <tr>
-                  <th>Mã</th>
-                  <th>Ngày gửi</th>
-                  <th class="table__num">Số tiền</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% history.forEach(function (item) { %>
-                  <tr>
-                    <td class="u-nowrap"><%= item.ma %></td>
-                    <td class="u-nowrap"><%= item.ngayGui %></td>
-                    <td class="table__num"><%= fmt.formatCurrency(item.soTien) %></td>
-                    <td>
-                      <span class="badge <%= item.trangThai === 'Đã duyệt' ? 'badge--success' : (item.trangThai === 'Từ chối' ? 'badge--danger' : 'badge--warning') %>">
-                        <%= item.trangThai %>
-                      </span>
-                    </td>
-                  </tr>
-                <% }); %>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      <% } %>
     </main>
   </div>
 </div>

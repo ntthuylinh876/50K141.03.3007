@@ -1,0 +1,11 @@
+<div class="sidebar__footer">
+  <form method="post" action="/dang-xuat">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <button type="submit" class="sidebar__logout">
+      <svg aria-hidden="true"><use href="#i-logout"></use></svg>
+      <span>Đăng xuất</span>
+    </button>
+  </form>
+
+  <%- include('coffee-divider', { count: 2, size: 'md' }) %>
+</div>

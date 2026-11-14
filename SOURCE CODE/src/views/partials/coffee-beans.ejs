@@ -1,0 +1,22 @@
+<%
+  /* ---------------------------------------------------------------------
+     Hạt cà phê chuẩn — vẽ theo doc/UI/Hatcaphe.png (cặp hạt 90x60, mỗi hạt 45x60).
+     Dùng currentColor cho thân hạt; rãnh giữa là lỗ trong suốt (fill-rule evenodd)
+     nên hạt hiển thị đúng trên mọi nền (nâu, trắng, be) mà không cần đổi màu rãnh.
+     Tham số: count = 1 (một hạt) hoặc 2 (cặp hạt).
+     --------------------------------------------------------------------- */
+  const beanCount = Number(typeof count !== 'undefined' ? count : 2) === 1 ? 1 : 2;
+  const beanBoxWidth = beanCount === 2 ? 90 : 45;
+%>
+<svg class="coffee-bean-svg" viewBox="0 0 <%= beanBoxWidth %> 60" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+  <g fill="currentColor" fill-rule="evenodd">
+    <g transform="translate(0 0) rotate(20 22.5 30)">
+      <path d="M22.5 2A21.5 28 0 0 1 22.5 58A21.5 28 0 0 1 22.5 2ZM26.5 6C31.5 15 31.5 44 23 54C21.5 44 21 16 26.5 6Z"/>
+    </g>
+    <% if (beanCount === 2) { %>
+      <g transform="translate(45 0) rotate(20 22.5 30)">
+        <path d="M22.5 2A21.5 28 0 0 1 22.5 58A21.5 28 0 0 1 22.5 2ZM26.5 6C31.5 15 31.5 44 23 54C21.5 44 21 16 26.5 6Z"/>
+      </g>
+    <% } %>
+  </g>
+</svg>

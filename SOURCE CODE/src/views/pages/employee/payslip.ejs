@@ -51,16 +51,16 @@
 
         <% if (!canView) { %>
           <!-- Phiếu lương chưa được phê duyệt (BR-UC8-01) -->
-          <section class="card u-mt-6">
-            <div class="empty-state">
-              <svg aria-hidden="true"><use href="#i-alert"></use></svg>
-              <p class="empty-state__title">Phiếu lương kỳ này chưa được phê duyệt</p>
-              <p class="empty-state__text">
-                Trạng thái: <strong><%= status.label %></strong>. Vui lòng quay lại sau khi chủ quán duyệt bảng lương.
-              </p>
-              <a class="btn btn--secondary empty-state__action" href="/nhan-vien/trang-chu">Quay lại</a>
+          <section class="card card--locked-placeholder u-mt-6" aria-hidden="true"></section>
+
+          <div class="modal-overlay modal-overlay--locked">
+            <div class="modal-card modal-card--locked" role="dialog" aria-modal="true"
+                 aria-label="Phiếu lương chưa được phê duyệt" tabindex="-1">
+              <span class="modal-card__bang" aria-hidden="true">!</span>
+              <p class="modal-card__message">Phiếu lương kỳ này chưa<br>được phê duyệt</p>
             </div>
-          </section>
+            <a class="btn modal-overlay__back" href="/nhan-vien/trang-chu">Quay lại</a>
+          </div>
         <% } else { %>
 
           <!-- ---------------------------------------------------------- -->

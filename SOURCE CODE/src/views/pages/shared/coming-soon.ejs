@@ -21,7 +21,9 @@
 
       <div class="card">
         <div class="empty-state">
-          <svg aria-hidden="true"><use href="#i-coffee-bean"></use></svg>
+          <span class="empty-state__icon">
+            <%- include('../../partials/coffee-beans', { count: 1 }) %>
+          </span>
           <p class="empty-state__title">Màn hình đang được hoàn thiện</p>
           <p class="empty-state__text">
             Chức năng <strong><%= screenTitle %></strong> sẽ được xây dựng ở <strong><%= phase %></strong>.

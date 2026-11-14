@@ -71,8 +71,9 @@
                 <div class="form-group">
                   <label class="form-label" for="gioRa">Giờ ra <span class="req">*</span></label>
                   <input class="form-input <%= fieldErrors.gioRa ? 'is-invalid' : '' %>"
-                         type="time" id="gioRa" name="gioRa"
+                         type="text" id="gioRa" name="gioRa"
                          value="<%= form.gioRa || '' %>"
+                         placeholder="--:--" maxlength="5" autocomplete="off"
                          data-required="Vui lòng nhập giờ ra.">
                   <% if (fieldErrors.gioRa) { %>
                     <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.gioRa %></p>

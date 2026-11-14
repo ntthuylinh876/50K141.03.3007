@@ -19,7 +19,7 @@ const EMPLOYEE_MENU = [
       { key: 'advance', label: 'Ứng lương', href: '/nhan-vien/don-yeu-cau/ung-luong' },
     ],
   },
-  { key: 'payslip', label: 'Phiếu lương', href: '/nhan-vien/phieu-luong', icon: 'wallet' },
+  { key: 'payslip', label: 'Phiếu lương', href: '/nhan-vien/phieu-luong', icon: 'file' },
   { key: 'change-password', label: 'Đổi mật khẩu', href: '/doi-mat-khau', icon: 'lock' },
 ];
 

@@ -170,17 +170,26 @@
   /* Kiểm tra dữ liệu phía máy khách (song song với kiểm tra phía server) */
   /* ------------------------------------------------------------------ */
   function showFieldError(input, message) {
-    var host = input.closest('.password-field') || input;
+    // Gắn lỗi ra ngoài khối bọc để icon/khoảng cách trong ô không bị xô lệch.
+    var host = input.closest('.password-field, .auth-field') || input;
     var next = host.nextElementSibling;
     if (next && next.classList.contains('form-error')) return;
     var p = document.createElement('p');
     p.className = 'form-error';
-    p.textContent = message;
+    var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('width', '14');
+    icon.setAttribute('height', '14');
+    icon.setAttribute('aria-hidden', 'true');
+    var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', '#i-warning');
+    icon.appendChild(use);
+    p.appendChild(icon);
+    p.appendChild(document.createTextNode(message));
     host.insertAdjacentElement('afterend', p);
   }
 
   function clearFieldError(input) {
-    var host = input.closest('.password-field') || input;
+    var host = input.closest('.password-field, .auth-field') || input;
     var next = host.nextElementSibling;
     if (next && next.classList.contains('form-error')) next.remove();
     input.classList.remove('is-invalid');

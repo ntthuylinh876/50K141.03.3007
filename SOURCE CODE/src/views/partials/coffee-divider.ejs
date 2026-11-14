@@ -1,0 +1,16 @@
+<%
+  /* ---------------------------------------------------------------------
+     Đường kẻ ngang + hạt cà phê ở giữa (dùng chung cho sidebar và màn Đăng nhập).
+     Tham số:
+       count = 1 | 2   số hạt ở giữa (mặc định 2)
+       size  = 'sm' | 'md' | 'lg'   cỡ hạt (mặc định 'md')
+     Màu đường kẻ / màu hạt đặt qua CSS theo từng nền (xem layout.css).
+     --------------------------------------------------------------------- */
+  const dividerSize = ['sm', 'md', 'lg'].indexOf(typeof size !== 'undefined' ? size : '') !== -1 ? size : 'md';
+  const dividerCount = Number(typeof count !== 'undefined' ? count : 2) === 1 ? 1 : 2;
+%>
+<div class="coffee-divider coffee-divider--<%= dividerSize %>" aria-hidden="true">
+  <span class="coffee-divider__line"></span>
+  <%- include('coffee-beans', { count: dividerCount }) %>
+  <span class="coffee-divider__line"></span>
+</div>

@@ -78,13 +78,13 @@
       <!-- ------------------------------------------------------------ -->
       <!-- Lịch làm việc tuần này (UC07)                                 -->
       <!-- ------------------------------------------------------------ -->
-      <section class="week-card">
+      <a class="week-card week-card--link" href="/nhan-vien/lich-lam-viec" aria-label="Xem lịch làm việc">
         <div class="week-card__head">
           <svg aria-hidden="true"><use href="#i-calendar"></use></svg>
           <h2 class="week-card__title">Lịch làm việc</h2>
         </div>
 
-        <div class="week-grid" tabindex="0" role="group" aria-label="Lịch làm việc trong tuần, vuốt ngang để xem thêm">
+        <div class="week-grid" role="group" aria-label="Lịch làm việc trong tuần, vuốt ngang để xem thêm">
           <% week.forEach(function (day) { %>
             <div class="week-day <%= day.isToday ? 'is-today' : '' %> <%= day.shifts.length ? '' : 'week-day--off' %>">
               <p class="week-day__label"><%= day.label %></p>
@@ -95,7 +95,7 @@
             </div>
           <% }); %>
         </div>
-      </section>
+      </a>
     </main>
   </div>
 </div>
