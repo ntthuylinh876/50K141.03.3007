@@ -92,6 +92,9 @@
   --text-3xl: 1.875rem; /* 30px */
   --text-4xl: 2.5rem;   /* 40px */
 
+  /* Cỡ tiêu đề chức năng dùng chung cho MỌI trang (class .page-title). */
+  --fs-title: 35px;
+
   /* --- Bố cục --- */
   --sidebar-width: 300px;
   --sidebar-inset: 32px;
@@ -104,3 +107,11 @@
   --dur: 200ms;
   --dur-slow: 320ms;
 }
+
+/* Điện thoại: tiêu đề chức năng thu về 26px (theo yêu cầu, một biến dùng chung). */
+@media (max-width: 640px) {
+  :root {
+    --fs-title: 26px;
+  }
+}
+

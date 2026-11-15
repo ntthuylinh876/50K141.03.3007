@@ -18,8 +18,7 @@
       <section class="data-card">
         <div class="data-card__head">
           <div>
-            <h1 class="data-card__title">Thêm nhân viên</h1>
-            <p class="data-card__subtitle">Tài khoản đăng nhập được tạo tự động sau khi lưu.</p>
+            <h1 class="data-card__title page-title">Thêm nhân viên</h1>
           </div>
         </div>
 
@@ -42,8 +41,6 @@
                      data-required="Vui lòng nhập mã nhân viên.">
               <% if (fieldErrors.maNV) { %>
                 <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.maNV %></p>
-              <% } else { %>
-                <p class="form-hint">Gợi ý mã kế tiếp, có thể sửa (ví dụ NV011).</p>
               <% } %>
             </div>
 
@@ -76,7 +73,7 @@
               <select class="form-select <%= fieldErrors.viTri ? 'is-invalid' : '' %>"
                       id="viTri" name="viTri"
                       data-required="Vui lòng chọn vị trí.">
-                <option value="">-- Chọn vị trí --</option>
+                <option value=""></option>
                 <% positions.forEach(function (item) { %>
                   <option value="<%= item %>" <%= form.viTri === item ? 'selected' : '' %>><%= item %></option>
                 <% }); %>
@@ -119,9 +116,7 @@
               <input class="form-input <%= fieldErrors.mucLuong ? 'is-invalid' : '' %>"
                      type="text" id="mucLuong" name="mucLuong" value="<%= form.mucLuong %>"
                      inputmode="numeric" autocomplete="off"
-                     placeholder="25000"
                      data-required="Vui lòng nhập mức lương.">
-              <p class="form-hint">Đơn giá giờ (đồng/giờ), ví dụ 25.000.</p>
               <% if (fieldErrors.mucLuong) { %>
                 <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.mucLuong %></p>
               <% } %>
@@ -132,9 +127,7 @@
               <input class="form-input <%= fieldErrors.taiKhoanNganHang ? 'is-invalid' : '' %>"
                      type="text" id="taiKhoanNganHang" name="taiKhoanNganHang"
                      value="<%= form.taiKhoanNganHang %>" maxlength="72" autocomplete="off"
-                     placeholder="VCB-1028882991"
                      data-required="Vui lòng nhập tài khoản ngân hàng.">
-              <p class="form-hint">Nhập theo dạng TENNGANHANG-SOTAIKHOAN.</p>
               <% if (fieldErrors.taiKhoanNganHang) { %>
                 <p class="form-error"><svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg><%= fieldErrors.taiKhoanNganHang %></p>
               <% } %>
@@ -144,12 +137,34 @@
           <div class="form-actions form-actions--end">
             <a class="btn btn--light" href="<%= basePath %>/nhan-vien/sua">Hủy</a>
             <button class="btn" type="submit">
-              <svg width="16" height="16" aria-hidden="true"><use href="#i-save"></use></svg>
+              <svg width="16" height="16" aria-hidden="true"><use href="#i-check"></use></svg>
               Lưu
             </button>
           </div>
         </form>
       </section>
+
+      <% if (typeof createdAccount !== 'undefined' && createdAccount) { %>
+        <div class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-labelledby="createdTitle">
+          <div class="modal-card modal-card--success" tabindex="-1">
+            <div class="modal-card__icon modal-card__icon--success">
+              <svg aria-hidden="true"><use href="#i-check-circle"></use></svg>
+            </div>
+            <h1 class="account-created__title" id="createdTitle">Thêm nhân viên thành công</h1>
+
+            <dl class="account-created__list">
+              <div class="account-created__row">
+                <dt>Tên đăng nhập</dt>
+                <dd><code><%= createdAccount.account.phone %></code></dd>
+              </div>
+              <div class="account-created__row">
+                <dt>Mật khẩu tự sinh</dt>
+                <dd><code><%= createdAccount.account.password %></code></dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      <% } %>
     </main>
   </div>
 </div>

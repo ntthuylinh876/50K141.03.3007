@@ -134,8 +134,95 @@
   refreshStaffEmpty(staffOut);
 
   /* ------------------------------------------------------------------ */
+  /* Bộ chọn thời gian: Ngày / Tuần + lịch (Dữ liệu chấm công)           */
+  /* ------------------------------------------------------------------ */
+  document.querySelectorAll('[data-time-picker]').forEach(function (picker) {
+    var toggle = picker.querySelector('[data-time-toggle]');
+    var panel = picker.querySelector('[data-time-panel]');
+    var label = picker.querySelector('[data-time-label]');
+    var modeInput = picker.querySelector('[data-time-mode-input]');
+    var dayInput = picker.querySelector('[data-time-day-input]');
+    var weekInput = picker.querySelector('[data-time-week-input]');
+    var form = picker.closest('form');
+    if (!toggle || !panel || !form) return;
+
+    var setOpen = function (open) {
+      panel.hidden = !open;
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+
+    var currentMode = function () {
+      return modeInput && modeInput.value === 'tuan' ? 'tuan' : 'ngay';
+    };
+
+    toggle.addEventListener('click', function (event) {
+      event.stopPropagation();
+      setOpen(panel.hidden);
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!picker.contains(event.target)) setOpen(false);
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') setOpen(false);
+    });
+
+    picker.querySelectorAll('[data-time-mode]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var mode = btn.getAttribute('data-time-mode');
+        if (modeInput) modeInput.value = mode;
+
+        picker.querySelectorAll('[data-time-mode]').forEach(function (other) {
+          other.classList.toggle('is-active', other === btn);
+        });
+        picker.querySelectorAll('[data-time-body]').forEach(function (body) {
+          body.hidden = body.getAttribute('data-time-body') !== mode;
+        });
+
+        if (label) {
+          label.textContent = picker.getAttribute(
+            mode === 'tuan' ? 'data-label-week' : 'data-label-day',
+          );
+        }
+      });
+    });
+
+    picker.querySelectorAll('[data-time-day]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (dayInput) dayInput.value = btn.getAttribute('data-time-day');
+        if (modeInput) modeInput.value = 'ngay';
+        form.submit();
+      });
+    });
+
+    picker.querySelectorAll('[data-time-week]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (weekInput) weekInput.value = btn.getAttribute('data-time-week');
+        if (modeInput) modeInput.value = 'tuan';
+        form.submit();
+      });
+    });
+
+    picker.querySelectorAll('[data-time-month]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var month = btn.getAttribute('data-time-month');
+        if (dayInput) dayInput.value = month + '-01';
+        if (weekInput) weekInput.value = '';
+        if (modeInput) modeInput.value = currentMode();
+        form.submit();
+      });
+    });
+  });
+
+  /* ------------------------------------------------------------------ */
   /* Sửa tiền phạt ở màn Duyệt bảng lương                                */
   /* ------------------------------------------------------------------ */
+  function parseMoney(value) {
+    var cleaned = String(value == null ? '' : value).replace(/[.,\s]/g, '');
+    return Math.round(Number(cleaned) || 0);
+  }
+
   function formatMoney(value) {
     var n = Math.round(Number(value) || 0);
     return n.toLocaleString('vi-VN');
@@ -150,6 +237,7 @@
       var editing = !form.classList.contains('is-editing');
       form.classList.toggle('is-editing', editing);
       btn.setAttribute('aria-pressed', editing ? 'true' : 'false');
+      btn.hidden = editing;
 
       var bar = form.querySelector('[data-penalty-bar]');
       if (bar) bar.hidden = !editing;
@@ -176,7 +264,7 @@
     if (!cell) return;
 
     var base = Number(cell.getAttribute('data-base')) || 0;
-    var phat = Number(input.value) || 0;
+    var phat = parseMoney(input.value);
     cell.textContent = formatMoney(base - phat);
   }
 

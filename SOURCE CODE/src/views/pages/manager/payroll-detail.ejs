@@ -5,6 +5,8 @@
   //  - Tổng hợp lương nhân viên của kỳ (không có `slip`)
   //  - Chi tiết lương theo từng ca của một nhân viên (có `slip`)
   var isSlip = typeof slip !== 'undefined' && slip;
+  // Màn chi tiết không truyền `isEmpty`; tự suy ra từ danh sách dòng.
+  var isEmptyData = typeof isEmpty !== 'undefined' ? isEmpty : !(rows && rows.length);
 %>
 
 <div class="app-shell">
@@ -23,7 +25,7 @@
       </nav>
 
       <div class="page-head">
-        <h1 class="page-head__title">Bảng lương</h1>
+        <h1 class="page-head__title page-title">Bảng lương</h1>
 
         <form class="select-pill">
           <label class="u-sr-only" for="periodSelect">Kỳ lương</label>
@@ -39,7 +41,7 @@
         </form>
       </div>
 
-      <% if (isEmpty) { %>
+      <% if (isEmptyData) { %>
         <div class="empty-state">
           <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
           <p class="empty-state__title">Chưa có dữ liệu lương cho kỳ này!</p>

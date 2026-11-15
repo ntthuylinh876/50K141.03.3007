@@ -17,7 +17,7 @@
 
       <section class="data-card">
         <div class="data-card__head">
-          <h1 class="data-card__title">Danh sách phiếu lương</h1>
+          <h1 class="data-card__title page-title">Danh sách phiếu lương</h1>
           <% if (period) { %>
             <span class="data-card__note"><%= period.label %></span>
           <% } %>
@@ -53,20 +53,6 @@
           </div>
         <% } %>
       </section>
-
-      <% if (pendingProposals > 0 && currentUser.role === 'owner') { %>
-        <div class="proposal-banner">
-          <div>
-            <p class="proposal-banner__title">
-              Có <%= pendingProposals %> đề xuất chỉnh sửa lương đang chờ duyệt
-            </p>
-            <p class="proposal-banner__text">
-              Quản lý đã đối chiếu chấm công và lịch làm, đề xuất điều chỉnh phiếu lương.
-            </p>
-          </div>
-          <a class="btn" href="<%= basePath %>/luong/cap-nhat/xet-de-xuat">Xét đề xuất</a>
-        </div>
-      <% } %>
 
       <% if (history && history.length) { %>
         <section class="data-card">

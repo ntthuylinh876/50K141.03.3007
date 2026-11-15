@@ -17,8 +17,7 @@
 
       <section class="data-card">
         <div class="data-card__head">
-          <h1 class="data-card__title">Chủ quán xét đề xuất</h1>
-          <span class="data-card__note">Đơn vị: VNĐ</span>
+          <h1 class="data-card__title page-title">Chủ quán xét đề xuất</h1>
         </div>
 
         <% if (isEmpty) { %>
@@ -33,13 +32,12 @@
             <% items.forEach(function (item) { %>
               <article class="proposal">
                 <div class="proposal__head">
-                  <h2 class="proposal__person"><%= item.hoTen %></h2>
-                  <p class="proposal__meta">
-                    <%= item.kyLabel %> · <%= item.nguoiDeXuat %> đề xuất
+                  <h2 class="proposal__person">
+                    <%= item.hoTen %>
                     <% if (item.isOverdue) { %>
-                      · <span class="badge badge--warning">Quá hạn — kết chuyển kỳ sau</span>
+                      <span class="badge badge--warning">Quá hạn — kết chuyển kỳ sau</span>
                     <% } %>
-                  </p>
+                  </h2>
                 </div>
 
                 <div class="proposal__body">

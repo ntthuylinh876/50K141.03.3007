@@ -516,7 +516,8 @@ async function updatePayrollLines(maBL, maPL, body, role) {
 
   const entries = maCTLs.map((maCTL) => {
     const raw = body ? body[`phat_${maCTL}`] : undefined;
-    const phat = Number(raw);
+    // Cho phép nhập số bất kỳ, kể cả có dấu phân cách nghìn ("50.000").
+    const phat = Number(String(raw == null ? '' : raw).replace(/[.,\s]/g, ''));
     if (!Number.isFinite(phat) || phat < 0) {
       throw badRequest('Tiền phạt không hợp lệ.', { phat: 'Tiền phạt không hợp lệ.' });
     }

@@ -29,17 +29,16 @@ const MANAGER_MENU = [
   {
     key: 'approvals',
     label: 'Duyệt đơn đăng ký',
-    icon: 'clipboard-check',
+    icon: 'file',
     children: [
       { key: 'approve-leave', label: 'Đơn xin nghỉ/đổi ca', href: '/quan-ly/duyet-don/xin-nghi-doi-ca' },
       { key: 'approve-cover', label: 'Đơn xin làm thay', href: '/quan-ly/duyet-don/lam-thay' },
-      { key: 'approve-advance', label: 'Duyệt ứng lương', href: '/quan-ly/duyet-don/ung-luong' },
     ],
   },
   {
     key: 'attendance',
     label: 'Quản lý chấm công',
-    icon: 'clock',
+    icon: 'clipboard-check',
     children: [
       { key: 'approve-supplement', label: 'Duyệt chấm công bổ sung', href: '/quan-ly/cham-cong/duyet-bo-sung' },
       { key: 'attendance-data', label: 'Dữ liệu chấm công', href: '/quan-ly/cham-cong/du-lieu' },
@@ -48,12 +47,11 @@ const MANAGER_MENU = [
   {
     key: 'payroll',
     label: 'Quản lý lương',
-    icon: 'wallet',
+    icon: 'purse',
     children: [
       { key: 'payroll-list', label: 'Bảng lương', href: '/quan-ly/luong/bang-luong' },
       { key: 'payroll-approve', label: 'Duyệt bảng lương', href: '/quan-ly/luong/duyet' },
       { key: 'payroll-update', label: 'Cập nhật bảng lương', href: '/quan-ly/luong/cap-nhat' },
-      { key: 'payroll-feedback', label: 'Phản hồi phiếu lương', href: '/quan-ly/luong/phan-hoi' },
     ],
   },
   { key: 'change-password', label: 'Đổi mật khẩu', href: '/doi-mat-khau', icon: 'lock' },

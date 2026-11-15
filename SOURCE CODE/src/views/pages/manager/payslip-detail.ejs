@@ -26,28 +26,11 @@
       <section class="data-card">
         <div class="data-card__head">
           <div>
-            <h1 class="data-card__title">Chi tiết phiếu lương</h1>
+            <h1 class="data-card__title page-title">Chi tiết phiếu lương</h1>
             <p class="data-card__subtitle"><%= slip.hoTen %> · <%= slip.kyLabel %></p>
           </div>
           <span class="data-card__note">Đơn vị: VNĐ</span>
         </div>
-
-        <% if (typeof proposals !== 'undefined' && proposals.length) { %>
-          <div class="proposal-notes">
-            <% proposals.forEach(function (proposal) {
-                 var line = rows.find(function (row) { return row.maCTL === proposal.maCTL; });
-            %>
-              <p class="proposal-note">
-                <span class="badge badge--<%= proposal.status.tone %>"><%= proposal.status.label %></span>
-                <span class="proposal-note__text">
-                  <% if (line) { %>Ca ngày <%= line.ngay %> · <% } %>
-                  gửi <%= proposal.ngayGui %> · <%= proposal.nguoiDeXuat %>: <%= proposal.lyDo %>
-                  <% if (proposal.lyDoTuChoi) { %> — Lý do từ chối: <%= proposal.lyDoTuChoi %><% } %>
-                </span>
-              </p>
-            <% }); %>
-          </div>
-        <% } %>
 
         <% if (isEmpty) { %>
           <div class="empty-state">

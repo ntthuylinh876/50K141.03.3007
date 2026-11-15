@@ -16,7 +16,7 @@
       </nav>
 
       <div class="page-head">
-        <h1 class="page-head__title">Cập nhật ca làm</h1>
+        <h1 class="page-head__title page-title">Cập nhật ca làm</h1>
       </div>
 
       <p class="shift-banner">
@@ -24,10 +24,12 @@
       </p>
 
       <% if (isPast) { %>
-        <p class="form-error form-error--block">
-          <svg width="14" height="14" aria-hidden="true"><use href="#i-alert"></use></svg>
-          Không thể cập nhật ca đã diễn ra.
-        </p>
+        <div class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-live="assertive">
+          <div class="modal-card modal-card--flash" tabindex="-1">
+            <span class="modal-card__bang" aria-hidden="true">!</span>
+            <p class="modal-card__message">Không thể cập nhật ca đã diễn ra</p>
+          </div>
+        </div>
       <% } %>
 
       <% if (hasRegistered) { %>
@@ -119,7 +121,6 @@
         </div>
 
         <div class="form-actions form-actions--end">
-          <a class="btn btn--light" href="<%= basePath %>/ca-lam/cap-nhat">← Quay lại</a>
           <button class="btn" type="submit" <%= isPast ? 'disabled' : '' %>>Lưu</button>
         </div>
       </form>

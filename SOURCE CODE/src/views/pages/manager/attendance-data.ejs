@@ -17,7 +17,7 @@
 
       <form method="get" action="<%= basePath %>/cham-cong/du-lieu">
         <div class="page-head">
-          <h1 class="page-head__title">Dữ liệu chấm công</h1>
+          <h1 class="page-head__title page-title">Dữ liệu chấm công</h1>
           <button class="btn" type="submit">
             <svg width="16" height="16" aria-hidden="true"><use href="#i-search"></use></svg>
             Xem
@@ -31,31 +31,66 @@
               Thời gian
             </span>
 
-            <div class="segmented segmented--sm" role="group" aria-label="Xem theo">
-              <label class="segmented__item">
-                <input class="u-sr-only" type="radio" name="cheDo" value="ngay"
-                       <%= mode === 'ngay' ? 'checked' : '' %> data-auto-submit>
-                <span>Ngày</span>
-              </label>
-              <label class="segmented__item">
-                <input class="u-sr-only" type="radio" name="cheDo" value="tuan"
-                       <%= mode === 'tuan' ? 'checked' : '' %> data-auto-submit>
-                <span>Tuần</span>
-              </label>
-            </div>
+            <div class="time-picker" data-time-picker
+                 data-label-day="<%= selectedDateLabel %>"
+                 data-label-week="<%= selectedWeekLabel %>">
+              <button type="button" class="time-picker__control" data-time-toggle
+                      aria-expanded="false" aria-haspopup="true">
+                <span data-time-label><%= mode === 'tuan' ? selectedWeekLabel : selectedDateLabel %></span>
+                <svg class="time-picker__chevron" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+              </button>
 
-            <% if (mode === 'ngay') { %>
-              <input class="filter-input" type="date" name="ngay" value="<%= selectedDate %>"
-                     aria-label="Ngày làm việc">
-            <% } else { %>
-              <select class="filter-input" name="tuan" aria-label="Tuần làm việc">
-                <% weeks.weeks.forEach(function (item) { %>
-                  <option value="<%= item.weekStart %>" <%= item.isSelected ? 'selected' : '' %>>
-                    Tuần <%= item.index %> (<%= item.label %>)
-                  </option>
-                <% }); %>
-              </select>
-            <% } %>
+              <div class="time-picker__panel" data-time-panel hidden>
+                <div class="time-picker__modes" role="group" aria-label="Xem theo">
+                  <button type="button" class="time-mode<%= mode === 'ngay' ? ' is-active' : '' %>"
+                          data-time-mode="ngay">Ngày</button>
+                  <button type="button" class="time-mode<%= mode === 'tuan' ? ' is-active' : '' %>"
+                          data-time-mode="tuan">Tuần</button>
+                </div>
+
+                <div class="time-picker__body" data-time-body="ngay" <%= mode === 'ngay' ? '' : 'hidden' %>>
+                  <div class="time-cal__head">
+                    <button type="button" class="time-cal__nav" data-time-month="<%= calendar.prevMonth %>"
+                            aria-label="Tháng trước">‹</button>
+                    <span class="time-cal__title"><%= calendar.label %></span>
+                    <button type="button" class="time-cal__nav" data-time-month="<%= calendar.nextMonth %>"
+                            aria-label="Tháng sau">›</button>
+                  </div>
+                  <div class="time-cal__grid">
+                    <% calendar.cells.forEach(function (cell) { %>
+                      <% if (!cell) { %>
+                        <span class="time-cal__cell is-empty"></span>
+                      <% } else { %>
+                        <button type="button" class="time-cal__cell<%= cell.isSelected ? ' is-selected' : '' %>"
+                                data-time-day="<%= cell.value %>"><%= cell.day %></button>
+                      <% } %>
+                    <% }); %>
+                  </div>
+                </div>
+
+                <div class="time-picker__body" data-time-body="tuan" <%= mode === 'tuan' ? '' : 'hidden' %>>
+                  <div class="time-cal__head">
+                    <button type="button" class="time-cal__nav" data-time-month="<%= calendar.prevMonth %>"
+                            aria-label="Tháng trước">‹</button>
+                    <span class="time-cal__title"><%= weeks.label %></span>
+                    <button type="button" class="time-cal__nav" data-time-month="<%= calendar.nextMonth %>"
+                            aria-label="Tháng sau">›</button>
+                  </div>
+                  <div class="time-weeks">
+                    <% weeks.weeks.forEach(function (item) { %>
+                      <button type="button" class="time-week<%= item.isSelected ? ' is-selected' : '' %>"
+                              data-time-week="<%= item.weekStart %>">
+                        Tuần <%= item.index %> (<%= item.label %>)
+                      </button>
+                    <% }); %>
+                  </div>
+                </div>
+              </div>
+
+              <input type="hidden" name="cheDo" value="<%= mode %>" data-time-mode-input>
+              <input type="hidden" name="ngay" value="<%= selectedDate %>" data-time-day-input>
+              <input type="hidden" name="tuan" value="<%= selectedWeek %>" data-time-week-input>
+            </div>
           </div>
 
           <div class="filter-card">
@@ -171,4 +206,4 @@
   </div>
 </div>
 
-<%- include('../../partials/foot') %>
+<%- include('../../partials/foot', { pageScripts: ['/js/manager.js'] }) %>

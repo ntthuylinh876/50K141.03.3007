@@ -7,38 +7,34 @@
     <%- include('../../partials/topbar') %>
 
     <main class="content">
-      <nav class="breadcrumb" aria-label="Đường dẫn">
-        <span class="breadcrumb__current">Trang chủ</span>
-      </nav>
+      <% if (notice) { %>
+        <div class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-live="assertive">
+          <div class="modal-card modal-card--flash" tabindex="-1">
+            <span class="modal-card__bang" aria-hidden="true">!</span>
+            <p class="modal-card__message"><%= notice %></p>
+          </div>
+        </div>
+      <% } %>
 
       <section class="home-welcome">
-        <h1 class="page-head__title home-welcome__title">Chào mừng bạn đã quay trở lại!</h1>
-        <p class="page-head__subtitle home-welcome__subtitle">
-          Theo dõi hoạt động của quán, duyệt bảng lương và quản lý thông tin nhân viên.
-        </p>
+        <h1 class="page-head__title home-welcome__title page-title">Chào mừng bạn đã quay trở lại !</h1>
       </section>
 
-      <div class="u-grid-auto">
-        <a class="card home-card" href="/chu-quan/ca-lam/cap-nhat">
+      <div class="home-cards">
+        <a class="home-card" href="<%= basePath %>/ca-lam/cap-nhat">
           <span class="home-card__icon">
-            <svg width="24" height="24" aria-hidden="true"><use href="#i-calendar"></use></svg>
+            <svg aria-hidden="true"><use href="#i-cup"></use></svg>
           </span>
-          <h2 class="card__title">Cập nhật ca làm</h2>
-          <p class="u-text-muted home-card__text">Thêm hoặc gỡ nhân viên khỏi các ca trong tuần.</p>
+          <span class="home-card__label">Cập nhật<br>ca làm</span>
         </a>
 
-        <a class="card home-card" href="/chu-quan/ca-lam/danh-sach">
+        <a class="home-card" href="<%= basePath %>/ca-lam/danh-sach">
           <span class="home-card__icon">
-            <svg width="24" height="24" aria-hidden="true"><use href="#i-users"></use></svg>
+            <svg aria-hidden="true"><use href="#i-cup"></use></svg>
           </span>
-          <h2 class="card__title">Xem danh sách ca làm</h2>
-          <p class="u-text-muted home-card__text">Tra cứu lịch làm việc theo thời gian và ca.</p>
+          <span class="home-card__label">Xem danh<br>sách ca làm</span>
         </a>
       </div>
-
-      <p class="u-text-muted home-note">
-        Duyệt bảng lương, quản lý chấm công và quản lý thông tin nhân viên nằm trong menu điều hướng.
-      </p>
     </main>
   </div>
 </div>

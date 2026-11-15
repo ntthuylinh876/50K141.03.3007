@@ -14,16 +14,16 @@
       </nav>
 
       <div class="page-head">
-        <h1 class="page-head__title">Cập nhật ca làm</h1>
+        <h1 class="page-head__title page-title">Cập nhật ca làm</h1>
       </div>
 
       <form class="select-pill" method="get" action="<%= basePath %>/ca-lam/cap-nhat">
         <svg class="select-pill__icon" aria-hidden="true"><use href="#i-calendar"></use></svg>
-        <label class="sr-only" for="weekSelect">Tuần làm việc</label>
+        <label class="u-sr-only" for="weekSelect">Tuần làm việc</label>
         <select class="select-pill__select" id="weekSelect" name="tuan" data-auto-submit>
           <% weekOptions.forEach(function (item) { %>
             <option value="<%= item.weekStart %>" <%= item.isSelected ? 'selected' : '' %>>
-              <%= item.label %><%= item.isCurrent ? ' (tuần này)' : '' %>
+              <%= item.label %>
             </option>
           <% }); %>
         </select>

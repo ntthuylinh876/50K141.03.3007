@@ -18,7 +18,7 @@
       <section class="data-card data-card--table">
         <div class="data-card__head">
           <div>
-            <h1 class="data-card__title">Quản lý nhân viên</h1>
+            <h1 class="data-card__title page-title">Quản lý nhân viên</h1>
             <p class="data-card__subtitle">
               <%= mode === 'edit'
                     ? 'Chọn một nhân viên để sửa thông tin.'
@@ -99,10 +99,6 @@
               </span>
               <h2 class="modal-card__title" id="deleteEmployeeTitle-<%= item.maNV %>">Xóa nhân viên này?</h2>
               <hr class="modal-card__divider">
-              <p class="modal-card__text">
-                <strong><%= item.hoTen %></strong> (<%= item.maNV %>) sẽ không còn hiện trong danh sách
-                làm việc và không thể đăng nhập. Lịch sử lương vẫn được giữ lại.
-              </p>
               <form method="post" action="<%= basePath %>/nhan-vien/xoa/<%= encodeURIComponent(item.maNV) %>">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <div class="modal__actions">

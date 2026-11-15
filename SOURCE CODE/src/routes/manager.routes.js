@@ -16,8 +16,6 @@ const approvalService = require('../services/approval.service');
 const attendanceService = require('../services/attendance-admin.service');
 const payrollService = require('../services/payroll-admin.service');
 const proposalService = require('../services/payroll-proposal.service');
-const advanceService = require('../services/advance.service');
-const feedbackService = require('../services/feedback.service');
 
 const router = express.Router();
 
@@ -114,7 +112,7 @@ router.post('/ca-lam/cap-nhat/:maCa/:ngay/ap-dung-dang-ky', async (req, res, nex
 router.get('/ca-lam/danh-sach', async (req, res, next) => {
   try {
     const ctx = await scheduleService.getListContext({
-      mode: req.query.cheDo,
+      mode: 'tuan',
       date: req.query.ngay,
       weekStart: req.query.tuan,
       maCa: req.query.ca,
@@ -320,63 +318,6 @@ router.post('/cham-cong/duyet-bo-sung/:id/khong-duyet', async (req, res, next) =
 });
 
 /* ========================================================================== */
-/* Duyệt ứng lương (UC09 → UC13.1)                                             */
-/* ========================================================================== */
-
-router.get('/duyet-don/ung-luong', async (req, res, next) => {
-  try {
-    const [rows, pendingCount] = await Promise.all([
-      advanceService.getAdvances(),
-      advanceService.countPending(),
-    ]);
-    return res.render('pages/manager/advances', {
-      pageTitle: 'Duyệt ứng lương',
-      activeMenu: 'approve-advance',
-      rows,
-      pendingCount,
-      isEmpty: rows.length === 0,
-      emptyMessage: advanceService.MSG_NO_REQUESTS,
-    });
-  } catch (err) {
-    return next(err);
-  }
-});
-
-router.post('/duyet-don/ung-luong/:id/duyet', async (req, res, next) => {
-  try {
-    const message = await advanceService.approveAdvance(
-      String(req.params.id).trim(),
-      req.session.user.id,
-    );
-    req.flash('success', message);
-    return redirectTo(req, res, '/duyet-don/ung-luong');
-  } catch (err) {
-    if (err.status === 400 || err.status === 404) {
-      req.flash('error', err.message);
-      return redirectTo(req, res, '/duyet-don/ung-luong');
-    }
-    return next(err);
-  }
-});
-
-router.post('/duyet-don/ung-luong/:id/khong-duyet', async (req, res, next) => {
-  try {
-    const message = await advanceService.rejectAdvance(
-      String(req.params.id).trim(),
-      req.session.user.id,
-    );
-    req.flash('error', message);
-    return redirectTo(req, res, '/duyet-don/ung-luong');
-  } catch (err) {
-    if (err.status === 400 || err.status === 404) {
-      req.flash('error', err.message);
-      return redirectTo(req, res, '/duyet-don/ung-luong');
-    }
-    return next(err);
-  }
-});
-
-/* ========================================================================== */
 /* M8 — Dữ liệu chấm công                                                      */
 /* ========================================================================== */
 
@@ -453,42 +394,7 @@ router.get('/luong/bang-luong/:maBL/:maNV', async (req, res, next) => {
 });
 
 /* --- Phản hồi phiếu lương của nhân viên (UC08 — 4a) ---------------------- */
-
-router.get('/luong/phan-hoi', async (req, res, next) => {
-  try {
-    const [rows, pendingCount] = await Promise.all([
-      feedbackService.getFeedbacks(),
-      feedbackService.countPending(),
-    ]);
-    return res.render('pages/manager/feedback-list', {
-      pageTitle: 'Phản hồi phiếu lương',
-      activeMenu: 'payroll-feedback',
-      rows,
-      pendingCount,
-      isEmpty: rows.length === 0,
-      emptyMessage: feedbackService.MSG_NO_FEEDBACK,
-    });
-  } catch (err) {
-    return next(err);
-  }
-});
-
-router.post('/luong/phan-hoi/:id/xu-ly', async (req, res, next) => {
-  try {
-    const message = await feedbackService.markProcessed(
-      String(req.params.id).trim(),
-      req.session.user.id,
-    );
-    req.flash('success', message);
-    return redirectTo(req, res, '/luong/phan-hoi');
-  } catch (err) {
-    if (err.status === 400 || err.status === 404) {
-      req.flash('error', err.message);
-      return redirectTo(req, res, '/luong/phan-hoi');
-    }
-    return next(err);
-  }
-});
+/* Q20: bỏ khỏi luồng quản lý (chức năng sẽ được lưu ở nơi khác sau). */
 
 /* ========================================================================== */
 /* M10 — Duyệt bảng lương                                                      */
@@ -587,11 +493,23 @@ router.post('/luong/duyet/:maBL/:maNV', async (req, res, next) => {
 
 router.get('/luong/cap-nhat', async (req, res, next) => {
   try {
-    const ctx = await payrollService.getPayslipList(req.query.ky);
     const [history, pendingProposals] = await Promise.all([
       proposalService.getProposalHistory(),
       proposalService.countPendingProposals(),
     ]);
+
+    // O1: chủ quán có đề xuất chỉnh sửa đang chờ duyệt → màn "Chủ quán xét đề xuất".
+    // Không có đề xuất → danh sách phiếu lương như quản lý.
+    if (req.session.user.role === proposalService.ROLE_OWNER && pendingProposals > 0) {
+      const review = await proposalService.getReviewScreen();
+      return res.render('pages/manager/payroll-proposals', {
+        pageTitle: 'Chủ quán xét đề xuất',
+        activeMenu: 'payroll-update',
+        ...review,
+      });
+    }
+
+    const ctx = await payrollService.getPayslipList(req.query.ky);
     return res.render('pages/manager/payslip-list', {
       pageTitle: 'Danh sách phiếu lương',
       activeMenu: 'payroll-update',
@@ -625,11 +543,11 @@ router.post('/luong/cap-nhat/xet-de-xuat/:maPH/duyet', requireOwner, async (req,
       role: req.session.user.role,
     });
     req.flash('success', result.message);
-    return redirectTo(req, res, '/luong/cap-nhat/xet-de-xuat');
+    return redirectTo(req, res, '/luong/cap-nhat');
   } catch (err) {
     if (err.status === 400 || err.status === 404) {
       req.flash('error', err.message);
-      return redirectTo(req, res, '/luong/cap-nhat/xet-de-xuat');
+      return redirectTo(req, res, '/luong/cap-nhat');
     }
     return next(err);
   }
@@ -646,11 +564,11 @@ router.post(
         req.session.user.role,
       );
       req.flash('error', message);
-      return redirectTo(req, res, '/luong/cap-nhat/xet-de-xuat');
+      return redirectTo(req, res, '/luong/cap-nhat');
     } catch (err) {
       if (err.status === 400 || err.status === 404) {
         req.flash('error', err.message);
-        return redirectTo(req, res, '/luong/cap-nhat/xet-de-xuat');
+        return redirectTo(req, res, '/luong/cap-nhat');
       }
       return next(err);
     }
@@ -717,14 +635,14 @@ router.get('/luong/cap-nhat/:maPL/chinh-sua/:maCTL', async (req, res, next) => {
 
 router.post('/luong/cap-nhat/:maPL/chinh-sua/:maCTL', async (req, res, next) => {
   try {
-    const message = await proposalService.createProposal(
+    await proposalService.createProposal(
       req.params.maPL,
       req.params.maCTL,
       req.body,
       req.session.user.id,
       req.session.user.role,
     );
-    req.flash('success', message);
+    // Q18: thông báo đề xuất hiện ở trang chủ chủ quán, không hiện ngay ở quản lý.
     return res.redirect(`${req.baseUrl}/luong/cap-nhat/${req.params.maPL}`);
   } catch (err) {
     if (err.status === 400) {

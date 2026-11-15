@@ -14,39 +14,19 @@
       </nav>
 
       <div class="page-head">
-        <h1 class="page-head__title">Danh sách ca làm</h1>
+        <h1 class="page-head__title page-title">Danh sách ca làm</h1>
       </div>
 
       <form class="filter-bar" method="get" action="<%= basePath %>/ca-lam/danh-sach">
         <div class="filter-field">
-          <span class="filter-label">Xem theo</span>
-          <div class="segmented" role="group" aria-label="Xem theo">
-            <label class="segmented__item">
-              <input class="u-sr-only" type="radio" name="cheDo" value="ngay"
-                     <%= mode === 'ngay' ? 'checked' : '' %> data-auto-submit>
-              <span>Ngày</span>
-            </label>
-            <label class="segmented__item">
-              <input class="u-sr-only" type="radio" name="cheDo" value="tuan"
-                     <%= mode === 'tuan' ? 'checked' : '' %> data-auto-submit>
-              <span>Tuần</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="filter-field">
-          <label class="filter-label" for="timeFilter"><%= mode === 'ngay' ? 'Ngày làm việc' : 'Tuần làm việc' %></label>
-          <% if (mode === 'ngay') { %>
-            <input class="filter-input" type="date" id="timeFilter" name="ngay" value="<%= selectedDate %>">
-          <% } else { %>
-            <select class="filter-input" id="timeFilter" name="tuan">
-              <% weekOptions.forEach(function (item) { %>
-                <option value="<%= item.weekStart %>" <%= item.isSelected ? 'selected' : '' %>>
-                  <%= item.label %><%= item.isCurrent ? ' (tuần này)' : '' %>
-                </option>
-              <% }); %>
-            </select>
-          <% } %>
+          <label class="filter-label" for="timeFilter">Thời gian</label>
+          <select class="filter-input" id="timeFilter" name="tuan">
+            <% weekOptions.forEach(function (item) { %>
+              <option value="<%= item.weekStart %>" <%= item.isSelected ? 'selected' : '' %>>
+                <%= item.label %>
+              </option>
+            <% }); %>
+          </select>
         </div>
 
         <div class="filter-field">
@@ -70,9 +50,11 @@
       </form>
 
       <% if (isEmpty) { %>
-        <div class="empty-state">
-          <span class="empty-state__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></span>
-          <p class="empty-state__title"><%= emptyMessage %></p>
+        <div class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-live="assertive">
+          <div class="modal-card modal-card--flash" tabindex="-1">
+            <span class="modal-card__bang" aria-hidden="true">!</span>
+            <p class="modal-card__message"><%= emptyMessage %></p>
+          </div>
         </div>
       <% } else { %>
         <% days.forEach(function (day) { %>

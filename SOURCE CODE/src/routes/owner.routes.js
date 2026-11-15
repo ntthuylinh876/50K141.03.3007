@@ -8,6 +8,7 @@
 const express = require('express');
 const { requireLogin, requireOwner } = require('../middleware/auth');
 const employeeService = require('../services/employee-admin.service');
+const proposalService = require('../services/payroll-proposal.service');
 
 const router = express.Router();
 
@@ -19,11 +20,18 @@ router.use((req, res, next) => {
   next();
 });
 
-router.get('/trang-chu', (req, res) => {
-  res.render('pages/owner/home', {
-    pageTitle: 'Trang chủ',
-    activeMenu: 'home',
-  });
+router.get('/trang-chu', async (req, res, next) => {
+  try {
+    const pendingProposals = await proposalService.countPendingProposals();
+    return res.render('pages/owner/home', {
+      pageTitle: 'Trang chủ',
+      activeMenu: 'home',
+      pendingProposals,
+      notice: pendingProposals > 0 ? 'Chỉnh sửa phiếu lương cần duyệt!' : null,
+    });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 /* ========================================================================== */
@@ -38,7 +46,7 @@ async function addFormData(overrides = {}) {
     positions: employeeService.POSITIONS,
     statuses: employeeService.STATUSES,
     form: {
-      maNV: await employeeService.suggestNextCode(),
+      maNV: '',
       hoTen: '',
       soDienThoai: '',
       viTri: '',
@@ -66,7 +74,6 @@ router.post('/nhan-vien/them', async (req, res, next) => {
     const result = await employeeService.addEmployee(req.body);
     req.session.createdAccount = result.account;
     req.session.createdEmployee = result.employee;
-    req.flash('success', employeeService.MSG_ADDED);
     return res.redirect('/chu-quan/nhan-vien/them/thanh-cong');
   } catch (err) {
     if (err.status === 400) {
@@ -90,11 +97,25 @@ router.get('/nhan-vien/them/thanh-cong', (req, res) => {
   delete req.session.createdAccount;
   delete req.session.createdEmployee;
 
-  return res.render('pages/owner/employee-created', {
-    pageTitle: 'Thêm nhân viên thành công',
+  // O3: chỉ hiện đúng 1 popup thành công, đặt trên màn Thêm nhân viên như ảnh UI.
+  return res.render('pages/owner/employee-add', {
+    pageTitle: 'Thêm nhân viên',
     activeMenu: 'employee-add',
-    account,
-    employee,
+    positions: employeeService.POSITIONS,
+    statuses: employeeService.STATUSES,
+    form: {
+      maNV: employee.maNV,
+      hoTen: employee.hoTen,
+      soDienThoai: employee.soDienThoai,
+      viTri: employee.viTri,
+      ngayVaoLam: employee.ngayVaoLam,
+      tinhTrang: employee.tinhTrang,
+      mucLuong: String(employee.mucLuong),
+      taiKhoanNganHang: employee.nganHangLabel,
+    },
+    fieldErrors: {},
+    error: null,
+    createdAccount: { account, employee },
   });
 });
 

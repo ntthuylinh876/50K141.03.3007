@@ -20,12 +20,16 @@
 
 <% if (flash && flash.length) { %>
   <% var first = flash[0]; %>
-  <% var isSuccess = first.type === 'success'; %>
+  <% var isWifiError = first.type === 'error' && first.message === 'Kết nối sai Wifi'; %>
   <div class="modal-overlay" data-modal>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-live="assertive" tabindex="-1">
-      <div class="modal-card__icon <%= isSuccess ? 'modal-card__icon--success' : '' %>">
-        <svg aria-hidden="true"><use href="#i-<%= isSuccess ? 'check' : (first.type === 'error' && first.message === 'Kết nối sai Wifi' ? 'wifi-off' : 'alert') %>"></use></svg>
-      </div>
+    <div class="modal-card modal-card--flash" role="dialog" aria-modal="true" aria-live="assertive" tabindex="-1">
+      <% if (isWifiError) { %>
+        <div class="modal-card__icon">
+          <svg aria-hidden="true"><use href="#i-wifi-off"></use></svg>
+        </div>
+      <% } else { %>
+        <span class="modal-card__bang" aria-hidden="true">!</span>
+      <% } %>
       <p class="modal-card__message"><%= first.message %></p>
     </div>
   </div>

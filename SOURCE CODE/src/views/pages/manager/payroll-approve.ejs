@@ -16,7 +16,14 @@
       </nav>
 
       <div class="page-head">
-        <h1 class="page-head__title">Duyệt bảng lương</h1>
+        <div>
+          <h1 class="page-head__title page-title">Duyệt bảng lương</h1>
+          <% if (period && (!canApprove || period.tinhTrang === 'Chờ chủ quán duyệt')) { %>
+            <span class="status-pill <%= period.tinhTrang === 'Đã duyệt' ? 'status-pill--done' : '' %>">
+              <%= pendingManager ? 'Chờ quản lý duyệt trước' : period.tinhTrang %>
+            </span>
+          <% } %>
+        </div>
         <% if (period) { %>
           <p class="page-head__meta">
             <strong><%= period.label %></strong> · <%= period.rangeLabel %>
@@ -68,8 +75,8 @@
           </div>
         </section>
 
-        <div class="approve-actions">
-          <% if (canApprove) { %>
+        <% if (canApprove) { %>
+          <div class="approve-actions">
             <button type="button" class="btn btn--secondary" data-open-modal="#rejectPayrollModal">
               Không duyệt
             </button>
@@ -77,12 +84,8 @@
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <button class="btn" type="submit">Duyệt</button>
             </form>
-          <% } else if (pendingManager) { %>
-            <span class="badge badge--warning">Chờ quản lý duyệt trước</span>
-          <% } else { %>
-            <span class="badge badge--info"><%= period.tinhTrang %></span>
-          <% } %>
-        </div>
+          </div>
+        <% } %>
 
         <% if (canApprove) { %>
           <div class="modal-overlay" data-modal id="rejectPayrollModal" hidden>
