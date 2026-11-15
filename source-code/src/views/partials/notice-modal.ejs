@@ -10,18 +10,21 @@
 %>
 <% if (type !== 'success' && type !== 'error') { throw new Error('notice-modal: type phải là "success" hoặc "error".'); } %>
 <%
-  var isLocked = variant === 'locked';
+  var modalVariant = typeof variant === 'undefined' ? null : variant;
+  var modalBackHref = typeof backHref === 'undefined' ? null : backHref;
+  var modalBackLabel = typeof backLabel === 'undefined' ? 'Quay lại' : backLabel;
+  var isLocked = modalVariant === 'locked';
   var cardClass = 'modal-card modal-card--flash';
-  if (variant === 'notice') cardClass = 'modal-card modal-card--notice';
+  if (modalVariant === 'notice') cardClass = 'modal-card modal-card--notice';
   if (isLocked) cardClass = 'modal-card modal-card--locked';
   var overlayClass = 'modal-overlay' + (isLocked ? ' modal-overlay--locked' : '');
 %>
 <div class="<%= overlayClass %>"<% if (!isLocked) { %> data-modal<% } %> role="dialog" aria-modal="true" aria-live="assertive">
   <div class="<%= cardClass %>" tabindex="-1">
-    <%- include('notice-icon', { type: type, variant: variant }) %>
+    <%- include('notice-icon', { type: type, variant: modalVariant }) %>
     <p class="modal-card__message"><%= message %></p>
   </div>
-  <% if (isLocked && backHref) { %>
-    <a class="btn modal-overlay__back" href="<%= backHref %>"><%= backLabel || 'Quay lại' %></a>
+  <% if (isLocked && modalBackHref) { %>
+    <a class="btn modal-overlay__back" href="<%= modalBackHref %>"><%= modalBackLabel %></a>
   <% } %>
 </div>
