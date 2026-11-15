@@ -219,10 +219,26 @@ h1.page-title {
 
 .nav-item:hover { background: rgba(255, 255, 255, 0.12); }
 
-/* Mục đang chọn: chữ đậm, không nền (theo ảnh UI) */
+/* Mục đang chọn dùng cùng nền trắng bo tròn với mục con trong sidebar. */
 .nav-item.is-active {
-  color: var(--white);
+  background: var(--white);
+  color: #5a2d14;
   font-weight: 700;
+  box-shadow: none;
+}
+
+/* Mục cha chỉ giữ trạng thái mở và chữ đậm; mục con mới nhận nền chọn. */
+.nav-item--parent.is-active {
+  background: transparent;
+  color: var(--white);
+}
+
+/* Mục cấp một đang chọn khớp kích thước và vị trí nền với mục con. */
+.sidebar__nav > .nav-item.is-active:not(.nav-item--parent) {
+  width: calc(100% - 14px);
+  min-height: 46px;
+  margin-left: 14px;
+  padding-left: 18px;
 }
 
 .nav-item__chevron {
@@ -2649,16 +2665,6 @@ button.shift-cell { font: inherit; }
 
 .proposal-note__text { color: var(--text-body); font-size: var(--fs-text); }
 
-.proposal-history__reason { max-width: 360px; }
-
-.proposal-history__note {
-  display: block;
-  margin-top: 4px;
-  color: var(--text-muted);
-  font-size: var(--fs-text);
-  line-height: 1.35;
-}
-
 .compare-note { margin-top: var(--space-5); color: var(--text-muted); font-size: var(--fs-text); }
 .compare-note a { color: var(--brown-700); font-weight: 600; }
 
@@ -3259,7 +3265,6 @@ button.shift-cell { font: inherit; }
     font-size: var(--fs-text);
     font-weight: 400;
   }
-  .table--stack .proposal-history__reason { max-width: none; }
 
   /* Dòng bảng bấm được (xóa nhân viên): nút thao tác ngay trên thẻ */
   .table--stack .cell--stack-only {

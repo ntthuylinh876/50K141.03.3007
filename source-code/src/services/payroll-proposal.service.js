@@ -442,48 +442,6 @@ async function getPayslipProposals(maPL) {
   return Array.from(latest.values());
 }
 
-/**
- * Nhật ký đề xuất chỉnh sửa lương (mới nhất trước) — cột `PhanHoiLuong` là nơi
- * lưu lịch sử theo quyết định C17.
- *
- * @param {{limit?: number}} [options]
- */
-async function getProposalHistory({ limit = 20 } = {}) {
-  const result = await query(
-    `SELECT TOP (@limit) ph.MaPH, ph.NgayGui, ph.LyDo, ph.TrangThai, ph."NoiDungDeXuat",
-            nv.HoTen, ql.HoTen AS TenQuanLy,
-            pl.MaPL, bl.Thang, bl.Nam
-       FROM PhanHoiLuong ph
-       LEFT JOIN NhanVien nv ON nv.MaNV = ph.MaNV
-       LEFT JOIN QuanLy ql ON ql.MaQL = ph.MaQL
-       LEFT JOIN PhieuLuong pl ON pl.MaPL = ph.MaPL
-       LEFT JOIN BangLuong bl ON bl.MaBL = pl.MaBL
-      WHERE ph."NoiDungDeXuat" IS NOT NULL
-      ORDER BY ph.NgayGui DESC, ph.MaPH DESC`,
-    { limit: { type: sql.Int, value: Math.max(1, Number(limit) || 20) } },
-  );
-
-  return result.recordset.map((row) => {
-    const noiDung = parseProposal(row.NoiDungDeXuat);
-    const ketQua = noiDung?.ketQua || {};
-
-    return {
-      maPH: String(row.MaPH).trim(),
-      ngayGui: formatDate(row.NgayGui),
-      hoTen: row.HoTen || '—',
-      nguoiDeXuat: row.TenQuanLy || 'Quản lý',
-      kyLabel: row.Thang ? `Tháng ${String(row.Thang).padStart(2, '0')}/${row.Nam}` : '—',
-      maPL: row.MaPL ? String(row.MaPL).trim() : null,
-      lyDo: String(row.LyDo || '').trim(),
-      status: proposalStatusMeta(row.TrangThai),
-      // Đề xuất duyệt sau hạn chi trả: giá trị không sửa vào kỳ cũ mà được
-      // cộng/trừ vào kỳ sau, nên phải nói rõ kỳ nhận chênh lệch.
-      carryLabel: ketQua.kieu === 'ket-chuyen' ? ketQua.kyDich || 'kỳ sau' : '',
-      rejectReason: String(ketQua.lyDoTuChoi || '').trim(),
-    };
-  });
-}
-
 /* -------------------------------------------------------------------------- */
 /* Duyệt / không duyệt đề xuất (chủ quán)                                      */
 /* -------------------------------------------------------------------------- */
@@ -757,7 +715,6 @@ module.exports = {
   getReviewScreen,
   countPendingProposals,
   getPayslipProposals,
-  getProposalHistory,
   approveProposal,
   rejectProposal,
 };

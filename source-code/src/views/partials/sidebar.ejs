@@ -22,7 +22,7 @@
         </a>
       <% } else { %>
         <button type="button"
-                class="nav-item <%= item.isActive ? 'is-active' : '' %>"
+                class="nav-item nav-item--parent <%= item.isActive ? 'is-active' : '' %>"
                 data-nav-toggle
                 aria-expanded="<%= item.isOpen ? 'true' : 'false' %>">
           <svg aria-hidden="true"><use href="#i-<%= item.icon %>"></use></svg>

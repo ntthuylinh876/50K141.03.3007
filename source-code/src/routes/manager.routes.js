@@ -470,10 +470,7 @@ router.post('/luong/duyet/:maBL/:maNV', async (req, res, next) => {
 
 router.get('/luong/cap-nhat', async (req, res, next) => {
   try {
-    const [history, pendingProposals] = await Promise.all([
-      proposalService.getProposalHistory(),
-      proposalService.countPendingProposals(),
-    ]);
+    const pendingProposals = await proposalService.countPendingProposals();
 
     // O1: chủ quán có đề xuất chỉnh sửa đang chờ duyệt → màn "Chủ quán xét đề xuất".
     // Không có đề xuất → danh sách phiếu lương như quản lý.
@@ -491,7 +488,6 @@ router.get('/luong/cap-nhat', async (req, res, next) => {
       pageTitle: 'Danh sách phiếu lương',
       activeMenu: 'payroll-update',
       ...ctx,
-      history,
       pendingProposals,
     });
   } catch (err) {

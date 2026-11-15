@@ -103,41 +103,6 @@
         </div>
       </div>
 
-      <% if (history.length) { %>
-        <section class="card u-mt-6">
-          <div class="card__header">
-            <h2 class="card__title">Yêu cầu đã gửi</h2>
-          </div>
-          <div class="table-wrap">
-            <table class="table table--compact">
-              <thead>
-                <tr>
-                  <th>Mã</th>
-                  <th>Ngày gửi</th>
-                  <th>Ca làm</th>
-                  <th>Lý do</th>
-                  <th>Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% history.forEach(function (item) { %>
-                  <tr>
-                    <td class="u-nowrap"><%= item.maCCBS %></td>
-                    <td class="u-nowrap"><%= item.ngayGui %></td>
-                    <td class="u-nowrap"><%= item.ngayLam %> · <%= item.tenCa %></td>
-                    <td><%= item.lyDo %></td>
-                    <td>
-                      <span class="badge <%= item.trangThai === 'Đã duyệt' ? 'badge--success' : (item.trangThai === 'Từ chối' ? 'badge--danger' : 'badge--warning') %>">
-                        <%= item.trangThai %>
-                      </span>
-                    </td>
-                  </tr>
-                <% }); %>
-              </tbody>
-            </table>
-          </div>
-        </section>
-      <% } %>
     </main>
   </div>
 </div>

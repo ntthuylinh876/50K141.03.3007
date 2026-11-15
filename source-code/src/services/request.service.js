@@ -100,29 +100,7 @@ async function getSupplementaryContext(maNV) {
     };
   });
 
-  const history = await query(
-    `SELECT TOP 10 bs.MaCCBS, bs.NgayGui, bs.LyDo, bs.TrangThai,
-            CONVERT(char(10), llv.NgayLam, 23) AS NgayISO,
-            ca.TenCa
-       FROM ChamCongBoSung bs
-       JOIN LichLamViec llv ON llv.MaLich = bs.MaLich
-       JOIN CaLam ca ON ca.MaCa = llv.MaCa
-      WHERE bs.MaNV = @maNV
-      ORDER BY bs.NgayGui DESC`,
-    { maNV: { type: sql.Char(10), value: maNV } },
-  );
-
-  return {
-    shifts,
-    history: history.recordset.map((row) => ({
-      maCCBS: String(row.MaCCBS).trim(),
-      ngayGui: dt.formatDateVN(dt.toISODate(row.NgayGui)),
-      ngayLam: dt.formatDateVN(row.NgayISO),
-      tenCa: row.TenCa,
-      lyDo: row.LyDo,
-      trangThai: row.TrangThai,
-    })),
-  };
+  return { shifts };
 }
 
 /**
