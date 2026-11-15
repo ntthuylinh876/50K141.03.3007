@@ -66,12 +66,13 @@ async function getSupplementaryContext(maNV) {
        FROM LichLamViec llv
        JOIN CaLam ca ON ca.MaCa = llv.MaCa
        LEFT JOIN ChamCong cc ON cc.MaLich = llv.MaLich
-       OUTER APPLY (
-         SELECT TOP 1 MaCCBS, TrangThai
-           FROM ChamCongBoSung
-          WHERE MaLich = llv.MaLich AND MaNV = llv.MaNV
-          ORDER BY NgayGui DESC
-       ) bs
+       LEFT JOIN LATERAL (
+         SELECT cbs.MaCCBS, cbs.TrangThai
+           FROM ChamCongBoSung cbs
+          WHERE cbs.MaLich = llv.MaLich AND cbs.MaNV = llv.MaNV
+          ORDER BY cbs.NgayGui DESC
+          LIMIT 1
+       ) bs ON TRUE
       WHERE llv.MaNV = @maNV
         AND llv.NgayLam BETWEEN @from AND @today
       ORDER BY llv.NgayLam DESC, ca.GioBatDau`,

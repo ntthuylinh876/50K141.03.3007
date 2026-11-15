@@ -245,7 +245,7 @@ async function createProposal(maPL, maCTL, input, maQL, role) {
     `SELECT TOP 1 MaPH
        FROM PhanHoiLuong
       WHERE MaPL = @maPL
-        AND NoiDungDeXuat IS NOT NULL
+        AND "NoiDungDeXuat" IS NOT NULL
         AND TrangThai = @status
         AND ("NoiDungDeXuat"::jsonb ->> 'maCTL') = @maCTL
       ORDER BY NgayGui DESC`,
@@ -260,7 +260,7 @@ async function createProposal(maPL, maCTL, input, maQL, role) {
   if (existing) {
     await query(
       `UPDATE PhanHoiLuong
-          SET NgayGui = GETDATE(), LyDo = @lyDo, NoiDungDeXuat = @noiDung,
+          SET NgayGui = GETDATE(), LyDo = @lyDo, "NoiDungDeXuat" = @noiDung,
               MaQL = @maQL, TrangThai = @status
         WHERE MaPH = @maPH`,
       {
@@ -277,7 +277,7 @@ async function createProposal(maPL, maCTL, input, maQL, role) {
   const maPH = await nextMaPH();
 
   await query(
-    `INSERT INTO PhanHoiLuong (MaPH, NgayGui, LyDo, TrangThai, MaNV, MaQL, MaPL, NoiDungDeXuat)
+    `INSERT INTO PhanHoiLuong (MaPH, NgayGui, LyDo, TrangThai, MaNV, MaQL, MaPL, "NoiDungDeXuat")
      VALUES (@maPH, GETDATE(), @lyDo, @status, @maNV, @maQL, @maPL, @noiDung)`,
     {
       maPH: { type: sql.Char(10), value: maPH },
@@ -300,7 +300,7 @@ async function createProposal(maPL, maCTL, input, maQL, role) {
 /** Các đề xuất đang chờ chủ quán duyệt, kèm giá trị hiện tại và đề xuất. */
 async function getReviewScreen({ today = dt.todayISO() } = {}) {
   const result = await query(
-    `SELECT ph.MaPH, ph.NgayGui, ph.LyDo, ph.MaQL, ph.MaPL, ph.MaNV, ph.NoiDungDeXuat,
+    `SELECT ph.MaPH, ph.NgayGui, ph.LyDo, ph.MaQL, ph.MaPL, ph.MaNV, ph."NoiDungDeXuat",
             nv.HoTen,
             bl.MaBL, bl.Thang, bl.Nam,
             CONVERT(char(10), bl.NgayChiTra, 23) AS NgayChiTraISO,
@@ -310,7 +310,7 @@ async function getReviewScreen({ today = dt.todayISO() } = {}) {
        LEFT JOIN PhieuLuong pl ON pl.MaPL = ph.MaPL
        LEFT JOIN BangLuong bl ON bl.MaBL = pl.MaBL
        LEFT JOIN QuanLy ql ON ql.MaQL = ph.MaQL
-      WHERE ph.NoiDungDeXuat IS NOT NULL
+      WHERE ph."NoiDungDeXuat" IS NOT NULL
         AND ph.TrangThai = @status
       ORDER BY ph.NgayGui, ph.MaPH`,
     { status: { type: sql.NVarChar(20), value: STATUS.PENDING } },
@@ -396,7 +396,7 @@ async function countPendingProposals() {
   const result = await query(
     `SELECT COUNT(*) AS SoLuong
        FROM PhanHoiLuong
-      WHERE NoiDungDeXuat IS NOT NULL AND TrangThai = @status`,
+      WHERE "NoiDungDeXuat" IS NOT NULL AND TrangThai = @status`,
     { status: { type: sql.NVarChar(20), value: STATUS.PENDING } },
   );
   return Number(result.recordset[0]?.SoLuong || 0);
@@ -410,11 +410,11 @@ async function countPendingProposals() {
  */
 async function getPayslipProposals(maPL) {
   const result = await query(
-    `SELECT ph.MaPH, ph.NgayGui, ph.LyDo, ph.TrangThai, ph.NoiDungDeXuat,
+    `SELECT ph.MaPH, ph.NgayGui, ph.LyDo, ph.TrangThai, ph."NoiDungDeXuat",
             ql.HoTen AS TenQuanLy
        FROM PhanHoiLuong ph
        LEFT JOIN QuanLy ql ON ql.MaQL = ph.MaQL
-      WHERE ph.MaPL = @maPL AND ph.NoiDungDeXuat IS NOT NULL
+      WHERE ph.MaPL = @maPL AND ph."NoiDungDeXuat" IS NOT NULL
       ORDER BY ph.NgayGui DESC, ph.MaPH DESC`,
     { maPL: { type: sql.Char(10), value: String(maPL || '').trim() } },
   );
@@ -450,7 +450,7 @@ async function getPayslipProposals(maPL) {
  */
 async function getProposalHistory({ limit = 20 } = {}) {
   const result = await query(
-    `SELECT TOP (@limit) ph.MaPH, ph.NgayGui, ph.LyDo, ph.TrangThai, ph.NoiDungDeXuat,
+    `SELECT TOP (@limit) ph.MaPH, ph.NgayGui, ph.LyDo, ph.TrangThai, ph."NoiDungDeXuat",
             nv.HoTen, ql.HoTen AS TenQuanLy,
             pl.MaPL, bl.Thang, bl.Nam
        FROM PhanHoiLuong ph
@@ -458,7 +458,7 @@ async function getProposalHistory({ limit = 20 } = {}) {
        LEFT JOIN QuanLy ql ON ql.MaQL = ph.MaQL
        LEFT JOIN PhieuLuong pl ON pl.MaPL = ph.MaPL
        LEFT JOIN BangLuong bl ON bl.MaBL = pl.MaBL
-      WHERE ph.NoiDungDeXuat IS NOT NULL
+      WHERE ph."NoiDungDeXuat" IS NOT NULL
       ORDER BY ph.NgayGui DESC, ph.MaPH DESC`,
     { limit: { type: sql.Int, value: Math.max(1, Number(limit) || 20) } },
   );
@@ -491,9 +491,9 @@ async function getProposalHistory({ limit = 20 } = {}) {
 /** Đọc đề xuất đang chờ duyệt theo mã. */
 async function loadPending(maPH) {
   const result = await query(
-    `SELECT MaPH, MaPL, MaNV, TrangThai, LyDo, NoiDungDeXuat
+    `SELECT MaPH, MaPL, MaNV, TrangThai, LyDo, "NoiDungDeXuat"
        FROM PhanHoiLuong
-      WHERE MaPH = @maPH AND NoiDungDeXuat IS NOT NULL`,
+      WHERE MaPH = @maPH AND "NoiDungDeXuat" IS NOT NULL`,
     { maPH: { type: sql.Char(10), value: String(maPH || '').trim() } },
   );
 
@@ -691,7 +691,7 @@ async function approveProposal(maPH, { today = dt.todayISO(), role } = {}) {
       .input('noiDung', sql.NVarChar(sql.MAX), noiDung)
       .query(
         `UPDATE PhanHoiLuong
-            SET TrangThai = @status, NoiDungDeXuat = @noiDung
+            SET TrangThai = @status, "NoiDungDeXuat" = @noiDung
           WHERE MaPH = @maPH`,
       );
   });
@@ -728,7 +728,7 @@ async function rejectProposal(maPH, lyDo = '', role) {
 
   await query(
     `UPDATE PhanHoiLuong
-        SET TrangThai = @status, NoiDungDeXuat = @noiDung
+        SET TrangThai = @status, "NoiDungDeXuat" = @noiDung
       WHERE MaPH = @maPH`,
     {
       maPH: { type: sql.Char(10), value: proposal.maPH },
