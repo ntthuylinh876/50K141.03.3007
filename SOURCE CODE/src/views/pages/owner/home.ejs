@@ -8,12 +8,7 @@
 
     <main class="content">
       <% if (notice) { %>
-        <div class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-live="assertive">
-          <div class="modal-card modal-card--flash" tabindex="-1">
-            <span class="modal-card__bang" aria-hidden="true">!</span>
-            <p class="modal-card__message"><%= notice %></p>
-          </div>
-        </div>
+        <%- include('../../partials/notice-modal', { type: 'error', message: notice }) %>
       <% } %>
 
       <section class="home-welcome">

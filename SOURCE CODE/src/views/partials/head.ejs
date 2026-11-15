@@ -19,18 +19,11 @@
 <%- include('icons') %>
 
 <% if (flash && flash.length) { %>
-  <% var first = flash[0]; %>
-  <% var isWifiError = first.type === 'error' && first.message === 'Kết nối sai Wifi'; %>
-  <div class="modal-overlay" data-modal>
-    <div class="modal-card modal-card--flash" role="dialog" aria-modal="true" aria-live="assertive" tabindex="-1">
-      <% if (isWifiError) { %>
-        <div class="modal-card__icon">
-          <svg aria-hidden="true"><use href="#i-wifi-off"></use></svg>
-        </div>
-      <% } else { %>
-        <span class="modal-card__bang" aria-hidden="true">!</span>
-      <% } %>
-      <p class="modal-card__message"><%= first.message %></p>
-    </div>
-  </div>
+  <%
+    var first = flash[0];
+    // type do server gửi ('success' | 'error' | 'warning') — popup thành công dùng tick xanh.
+    var flashType = (first.type === 'error' || first.type === 'warning') ? 'error' : 'success';
+    var flashVariant = (flashType === 'error' && first.message === 'Kết nối sai Wifi') ? 'wifi' : null;
+  %>
+  <%- include('notice-modal', { type: flashType, message: first.message, variant: flashVariant }) %>
 <% } %>

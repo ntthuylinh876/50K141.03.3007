@@ -69,6 +69,28 @@ textarea {
 
 button { cursor: pointer; }
 
+/* --- Ô mật khẩu: chỉ dùng MỘT nút ẩn/hiện của web -----------------------
+   Ẩn nút hiện mật khẩu do trình duyệt tự chèn (Edge/IE và Chrome/Safari)
+   để không hiện 2 con mắt. Áp dụng cho mọi ô type="password" và cả ô đã
+   được đổi sang type="text" khi bấm nút hiện mật khẩu (.password-field). */
+input[type='password']::-ms-reveal,
+input[type='password']::-ms-clear,
+.password-field input::-ms-reveal,
+.password-field input::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+input[type='password']::-webkit-credentials-auto-fill-button,
+input[type='password']::-webkit-textfield-decoration-container,
+.password-field input::-webkit-credentials-auto-fill-button,
+.password-field input::-webkit-textfield-decoration-container {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
 ul, ol {
   margin: 0;
   padding: 0;

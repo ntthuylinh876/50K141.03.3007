@@ -1,0 +1,22 @@
+<%#
+  Icon dùng chung cho MỌI popup thông báo (3 vai trò).
+  Bắt buộc:
+    type    : 'success' | 'error'
+  Tuỳ chọn:
+    variant : 'wifi' — lỗi kết nối Wi-Fi (chỉ dùng với type = 'error')
+  Thành công = dấu tick xanh; lỗi/cảnh báo = icon lỗi riêng (không mặc định về lỗi).
+%>
+<% if (type !== 'success' && type !== 'error') { throw new Error('notice-icon: type phải là "success" hoặc "error".'); } %>
+<% if (type === 'success') { %>
+  <div class="modal-card__icon modal-card__icon--success">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4.5 12.5l5 5 10-10.5"></path>
+    </svg>
+  </div>
+<% } else if (variant === 'wifi') { %>
+  <div class="modal-card__icon">
+    <svg aria-hidden="true"><use href="#i-wifi-off"></use></svg>
+  </div>
+<% } else { %>
+  <span class="modal-card__bang" aria-hidden="true">!</span>
+<% } %>

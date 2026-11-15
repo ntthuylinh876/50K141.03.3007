@@ -41,9 +41,14 @@ function errorHandler(err, req, res, next) {
   const isServerError = status >= 500;
 
   if (isServerError) {
+    // Luôn ghi chi tiết (kèm stack) ra console/log của server.
     console.error(`[LỖI ${status}] ${req.method} ${req.originalUrl}`);
     console.error(err);
   }
+
+  // Chi tiết kỹ thuật chỉ hiển thị ở môi trường phát triển hoặc chế độ demo.
+  // Ở chế độ chạy thật, trang lỗi chỉ có tiêu đề, câu thông báo và hai nút.
+  const showDetails = config.env === 'development' || config.wifi.demoMode;
 
   if (wantsJson(req)) {
     return res.status(status).json({
@@ -74,7 +79,7 @@ function errorHandler(err, req, res, next) {
       ? 'Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau hoặc liên hệ quản lý.'
       : err.message,
     icon: status === 403 ? 'lock' : 'alert',
-    stack: !config.isProduction && isServerError ? err.stack : null,
+    stack: showDetails && isServerError ? err.stack : null,
   });
 }
 

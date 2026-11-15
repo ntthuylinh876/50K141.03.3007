@@ -11,15 +11,16 @@
  *        "cuối tuần và ngày lễ: 2 nhân viên/ca" (BR-UC5-02).
  */
 
-const { query, sql } = require('../config/db');
+const { query, sql, withTransaction, txRequest } = require('../config/db');
 const { badRequest } = require('../utils/http-error');
 const dt = require('../utils/datetime');
 const { isHoliday } = require('../utils/payroll');
-const { nextMaDK } = require('../utils/id');
+const { nextMaDK, nextMaLich } = require('../utils/id');
 
 const MSG_EMPTY_SELECTION = 'Vui lòng chọn ít nhất một ca làm!';
 const MSG_FULL = 'Đã có đủ số lượng nhân viên cho ca này!';
 const MSG_REGISTER_OK = 'Đăng ký ca làm thành công';
+const MSG_SHIFT_PAST = 'Không thể đăng ký ca đã diễn ra';
 const MSG_NO_SHIFT_WEEK = 'Bạn chưa có ca làm việc nào trong tuần này';
 
 /**
@@ -71,40 +72,32 @@ async function getRegisterContext(maNV) {
 
   const shifts = await getShifts();
 
-  // Số nhân viên khác đã đăng ký ca này trong tuần đăng ký (bước 4 của UC05).
-  // Chỉ tính đơn đăng ký, không tính lịch đã được quản lý xếp — vì lịch chính
-  // thức là kết quả của việc duyệt đơn, nếu tính cả hai sẽ trùng.
-  const registered = await query(
-    `SELECT LichRanh, MaCa, MaNV
-       FROM DangKyCaLam
-      WHERE NgayGui >= DATEADD(DAY, -60, GETDATE())`,
+  // Định biên (BR-UC5-02) tính trên lịch làm việc chính thức của tuần đăng ký:
+  // đăng ký hợp lệ được lưu thẳng vào LichLamViec (UC05 bước 6).
+  const scheduled = await query(
+    `SELECT CONVERT(char(10), NgayLam, 23) AS NgayISO, MaCa, MaNV
+       FROM LichLamViec
+      WHERE NgayLam BETWEEN @start AND @end`,
+    {
+      start: { type: sql.VarChar(10), value: weekStart },
+      end: { type: sql.VarChar(10), value: weekEnd },
+    },
   );
 
   const counts = new Map();
   const bump = (key) => counts.set(key, (counts.get(key) || 0) + 1);
 
-  for (const row of registered.recordset) {
-    const maNVRow = String(row.MaNV).trim();
-    const maCa = String(row.MaCa).trim();
-    for (const date of String(row.LichRanh || '').split(',')) {
-      const iso = date.trim();
-      if (!iso) continue;
-      if (iso < weekStart || iso > weekEnd) continue;
-      // Đăng ký của chính mình không tính vào định biên (sẽ được ghi đè khi gửi lại).
-      if (maNVRow === maNV) continue;
-      bump(`${iso}|${maCa}`);
-    }
-  }
-
-  // Ô đã đăng ký của chính nhân viên này (để hiển thị sẵn trạng thái đã chọn).
+  // Ca đã có lịch của chính nhân viên này: đánh dấu sẵn trên lưới, không tính
+  // vào số lượng để tránh tự chặn mình.
   const mine = new Set();
-  for (const row of registered.recordset) {
-    if (String(row.MaNV).trim() !== maNV) continue;
-    const maCa = String(row.MaCa).trim();
-    for (const date of String(row.LichRanh || '').split(',')) {
-      const iso = date.trim();
-      if (iso) mine.add(`${iso}|${maCa}`);
-    }
+
+  for (const row of scheduled.recordset) {
+    const maNVRow = String(row.MaNV).trim();
+    const iso = String(row.NgayISO || '').trim();
+    if (!iso) continue;
+    const key = `${iso}|${String(row.MaCa).trim()}`;
+    if (maNVRow === maNV) mine.add(key);
+    else bump(key);
   }
 
   const board = days.map((iso) => ({
@@ -140,9 +133,18 @@ async function getRegisterContext(maNV) {
   };
 }
 
+/** Ca đã bắt đầu/diễn ra thì không cho đăng ký (BR-UC10.1-01 áp dụng cho đăng ký). */
+function isPastSlot(ngayISO, gioBatDau) {
+  const today = dt.todayISO();
+  if (ngayISO < today) return true;
+  if (ngayISO > today) return false;
+  return dt.nowHM() >= gioBatDau;
+}
+
 /**
- * Lưu đăng ký ca làm (UC05).
- * Mỗi ca được lưu thành một dòng DangKyCaLam với LichRanh là danh sách ngày.
+ * Lưu đăng ký ca làm (UC05 bước 6).
+ * Đăng ký hợp lệ được ghi THẲNG vào LichLamViec trong MỘT transaction; dòng
+ * DangKyCaLam chỉ để lưu vết, không cần Quản lý/Chủ quán áp dụng thêm.
  *
  * @param {string} maNV
  * @param {string[]} slots  mảng khóa 'YYYY-MM-DD|CA01'
@@ -159,42 +161,80 @@ async function saveRegistration(maNV, slots) {
     for (const cell of day.cells) allowed.set(cell.key, cell);
   }
 
-  // Gom ngày theo ca, đồng thời kiểm tra định biên và dữ liệu gửi lên.
-  const byShift = new Map();
+  // Kiểm tra dữ liệu gửi lên + ca đã diễn ra trước khi mở transaction.
+  const picked = [];
   for (const raw of slots) {
     const key = String(raw || '').trim();
     const cell = allowed.get(key);
     if (!cell) throw badRequest(MSG_EMPTY_SELECTION, { slots: MSG_EMPTY_SELECTION });
-    if (cell.full && !cell.selected) {
-      throw badRequest(MSG_FULL, { slots: MSG_FULL });
-    }
     const [iso] = key.split('|');
-    if (!byShift.has(cell.maCa)) byShift.set(cell.maCa, new Set());
-    byShift.get(cell.maCa).add(iso);
+    if (isPastSlot(iso, cell.gioBatDau)) {
+      throw badRequest(MSG_SHIFT_PAST, { slots: MSG_SHIFT_PAST });
+    }
+    picked.push({ key, iso, maCa: cell.maCa, capacity: cell.capacity });
   }
 
-  // Ghi đè đăng ký cũ của nhân viên cho các ca có trong lần gửi này.
-  for (const [maCa, dates] of byShift) {
-    await query(
-      `DELETE FROM DangKyCaLam WHERE MaNV = @maNV AND MaCa = @maCa`,
-      {
-        maNV: { type: sql.Char(10), value: maNV },
-        maCa: { type: sql.Char(10), value: maCa },
-      },
-    );
+  await withTransaction(async (tx) => {
+    const traceByShift = new Map();
 
-    const maDK = await nextMaDK();
-    await query(
-      `INSERT INTO DangKyCaLam (MaDK, LichRanh, NgayGui, MaNV, MaCa)
-       VALUES (@maDK, @lichRanh, GETDATE(), @maNV, @maCa)`,
-      {
-        maDK: { type: sql.Char(10), value: maDK },
-        lichRanh: { type: sql.NVarChar(200), value: [...dates].sort().join(',') },
-        maNV: { type: sql.Char(10), value: maNV },
-        maCa: { type: sql.Char(10), value: maCa },
-      },
-    );
-  }
+    for (const item of picked) {
+      // Khóa dòng của đúng ca + ngày để kiểm tra định biên và chống trùng.
+      const existing = await txRequest(tx)
+        .input('ngay', sql.VarChar(10), item.iso)
+        .input('maCa', sql.Char(10), item.maCa)
+        .query(
+          `SELECT MaLich, MaNV
+             FROM LichLamViec WITH (UPDLOCK, HOLDLOCK)
+            WHERE NgayLam = @ngay AND MaCa = @maCa`,
+        );
+
+      const rows = existing.recordset.map((row) => ({
+        maLich: String(row.MaLich).trim(),
+        maNV: String(row.MaNV).trim(),
+      }));
+      const already = rows.some((row) => row.maNV === maNV);
+      const others = rows.filter((row) => row.maNV !== maNV).length;
+
+      // Chưa có lịch của mình: kiểm tra định biên rồi thêm mới.
+      if (!already) {
+        if (others >= item.capacity) {
+          throw badRequest(MSG_FULL, { slots: MSG_FULL });
+        }
+        const maLich = await nextMaLich();
+        await txRequest(tx)
+          .input('maLich', sql.Char(10), maLich)
+          .input('ngay', sql.VarChar(10), item.iso)
+          .input('maCa', sql.Char(10), item.maCa)
+          .input('maNV', sql.Char(10), maNV)
+          .query(
+            `INSERT INTO LichLamViec (MaLich, NgayLam, MaCa, MaNV)
+             VALUES (@maLich, @ngay, @maCa, @maNV)`,
+          );
+      }
+
+      if (!traceByShift.has(item.maCa)) traceByShift.set(item.maCa, new Set());
+      traceByShift.get(item.maCa).add(item.iso);
+    }
+
+    // Lưu vết đăng ký (mỗi ca một dòng, LichRanh là danh sách ngày).
+    for (const [maCa, dates] of traceByShift) {
+      await txRequest(tx)
+        .input('maNV', sql.Char(10), maNV)
+        .input('maCa', sql.Char(10), maCa)
+        .query('DELETE FROM DangKyCaLam WHERE MaNV = @maNV AND MaCa = @maCa');
+
+      const maDK = await nextMaDK();
+      await txRequest(tx)
+        .input('maDK', sql.Char(10), maDK)
+        .input('lichRanh', sql.NVarChar(200), [...dates].sort().join(','))
+        .input('maNV', sql.Char(10), maNV)
+        .input('maCa', sql.Char(10), maCa)
+        .query(
+          `INSERT INTO DangKyCaLam (MaDK, LichRanh, NgayGui, MaNV, MaCa)
+           VALUES (@maDK, @lichRanh, GETDATE(), @maNV, @maCa)`,
+        );
+    }
+  });
 
   return MSG_REGISTER_OK;
 }
@@ -306,6 +346,7 @@ module.exports = {
   MSG_EMPTY_SELECTION,
   MSG_FULL,
   MSG_REGISTER_OK,
+  MSG_SHIFT_PAST,
   MSG_NO_SHIFT_WEEK,
   capacityOf,
   getShifts,

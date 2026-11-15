@@ -1,0 +1,27 @@
+<%#
+  Popup thông báo dùng chung cho MỌI màn hình của 3 vai trò.
+  Bắt buộc:
+    type    : 'success' | 'error'  (quyết định icon: tick xanh / icon lỗi)
+    message : nội dung thông báo
+  Tuỳ chọn:
+    variant   : 'notice' (thẻ hồng) | 'locked' (khoá màn hình, không bấm nền để đóng)
+    backHref  : chỉ dùng với variant = 'locked' — nút "Quay lại"
+    backLabel : nhãn nút quay lại
+%>
+<% if (type !== 'success' && type !== 'error') { throw new Error('notice-modal: type phải là "success" hoặc "error".'); } %>
+<%
+  var isLocked = variant === 'locked';
+  var cardClass = 'modal-card modal-card--flash';
+  if (variant === 'notice') cardClass = 'modal-card modal-card--notice';
+  if (isLocked) cardClass = 'modal-card modal-card--locked';
+  var overlayClass = 'modal-overlay' + (isLocked ? ' modal-overlay--locked' : '');
+%>
+<div class="<%= overlayClass %>"<% if (!isLocked) { %> data-modal<% } %> role="dialog" aria-modal="true" aria-live="assertive">
+  <div class="<%= cardClass %>" tabindex="-1">
+    <%- include('notice-icon', { type: type, variant: variant }) %>
+    <p class="modal-card__message"><%= message %></p>
+  </div>
+  <% if (isLocked && backHref) { %>
+    <a class="btn modal-overlay__back" href="<%= backHref %>"><%= backLabel || 'Quay lại' %></a>
+  <% } %>
+</div>

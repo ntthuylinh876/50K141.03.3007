@@ -50,12 +50,7 @@
       </form>
 
       <% if (isEmpty) { %>
-        <div class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-live="assertive">
-          <div class="modal-card modal-card--flash" tabindex="-1">
-            <span class="modal-card__bang" aria-hidden="true">!</span>
-            <p class="modal-card__message"><%= emptyMessage %></p>
-          </div>
-        </div>
+        <%- include('../../partials/notice-modal', { type: 'error', message: emptyMessage }) %>
       <% } else { %>
         <% days.forEach(function (day) { %>
           <section class="schedule-day">

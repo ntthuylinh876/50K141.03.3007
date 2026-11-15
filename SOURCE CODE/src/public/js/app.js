@@ -143,15 +143,31 @@
   document.querySelectorAll('[data-modal]').forEach(bindModal);
 
   /* ------------------------------------------------------------------ */
-  /* Thông báo dạng hộp thoại (dùng cho ô ca đã đủ nhân viên)            */
+  /* Popup thông báo dùng chung (JS) — type bắt buộc: success | error     */
   /* ------------------------------------------------------------------ */
-  function openModal(message) {
+  var NOTICE_ICONS = {
+    success:
+      '<div class="modal-card__icon modal-card__icon--success">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
+      'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M4.5 12.5l5 5 10-10.5"></path></svg>' +
+      '</div>',
+    error: '<span class="modal-card__bang" aria-hidden="true">!</span>'
+  };
+
+  function openNoticeModal(message, type) {
+    if (type !== 'success' && type !== 'error') {
+      throw new Error('openNoticeModal: type phải là "success" hoặc "error".');
+    }
     var overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.setAttribute('data-modal', '');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-live', 'assertive');
     overlay.innerHTML =
-      '<div class="modal-card" role="dialog" aria-modal="true" aria-live="assertive" tabindex="-1">' +
-      '<div class="modal-card__icon"><svg aria-hidden="true"><use href="#i-alert"></use></svg></div>' +
+      '<div class="modal-card modal-card--flash" tabindex="-1">' +
+      NOTICE_ICONS[type] +
       '<p class="modal-card__message"></p>' +
       '</div>';
     overlay.querySelector('.modal-card__message').textContent = message;
@@ -162,7 +178,10 @@
   /* Ô ca đã đủ nhân viên: bấm vào hiện "Đã có đủ số lượng nhân viên cho ca này!" */
   document.querySelectorAll('[data-full-cell]').forEach(function (cell) {
     cell.addEventListener('click', function () {
-      openModal(cell.getAttribute('data-full-message') || 'Đã có đủ số lượng nhân viên cho ca này!');
+      openNoticeModal(
+        cell.getAttribute('data-full-message') || 'Đã có đủ số lượng nhân viên cho ca này!',
+        'error'
+      );
     });
   });
 

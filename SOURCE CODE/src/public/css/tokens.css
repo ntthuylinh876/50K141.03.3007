@@ -95,6 +95,11 @@
   /* Cỡ tiêu đề chức năng dùng chung cho MỌI trang (class .page-title). */
   --fs-title: 35px;
 
+  /* Cỡ chữ nội dung dùng chung cho MỌI màn hình có sidebar (VIỆC 3):
+     nội dung, nhãn, nút, menu sidebar, bảng, thông báo, ô nhập.
+     Các con số lớn (đồng hồ, số tiền trong thẻ chọn) và .page-title giữ riêng. */
+  --fs-text: 20px;
+
   /* --- Bố cục --- */
   --sidebar-width: 300px;
   --sidebar-inset: 32px;
@@ -108,10 +113,12 @@
   --dur-slow: 320ms;
 }
 
-/* Điện thoại: tiêu đề chức năng thu về 26px (theo yêu cầu, một biến dùng chung). */
+/* Điện thoại: tiêu đề chức năng thu về 26px; chữ nội dung 16px
+   (ô nhập không nhỏ hơn 16px để trình duyệt không tự phóng to). */
 @media (max-width: 640px) {
   :root {
     --fs-title: 26px;
+    --fs-text: 16px;
   }
 }
 

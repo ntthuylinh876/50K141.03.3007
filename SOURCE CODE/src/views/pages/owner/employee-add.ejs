@@ -147,9 +147,7 @@
       <% if (typeof createdAccount !== 'undefined' && createdAccount) { %>
         <div class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-labelledby="createdTitle">
           <div class="modal-card modal-card--success" tabindex="-1">
-            <div class="modal-card__icon modal-card__icon--success">
-              <svg aria-hidden="true"><use href="#i-check-circle"></use></svg>
-            </div>
+            <%- include('../../partials/notice-icon', { type: 'success' }) %>
             <h1 class="account-created__title" id="createdTitle">Thêm nhân viên thành công</h1>
 
             <dl class="account-created__list">

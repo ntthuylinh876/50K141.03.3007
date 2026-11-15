@@ -86,29 +86,6 @@ router.post('/ca-lam/cap-nhat/:maCa/:ngay', async (req, res, next) => {
   }
 });
 
-/** Áp dụng đăng ký ca (UC05) vào lịch chính thức của ca đang sửa. */
-router.post('/ca-lam/cap-nhat/:maCa/:ngay/ap-dung-dang-ky', async (req, res, next) => {
-  const raw = req.body.maNV;
-  const maNVs = Array.isArray(raw) ? raw : raw ? [raw] : [];
-  const backTo = `/ca-lam/cap-nhat/${req.params.maCa}/${req.params.ngay}`;
-
-  try {
-    const message = await scheduleService.applyRegistrations(
-      req.params.maCa,
-      req.params.ngay,
-      maNVs,
-    );
-    req.flash('success', message);
-    return redirectTo(req, res, backTo);
-  } catch (err) {
-    if (err.status === 400 || err.status === 404) {
-      req.flash('error', err.message);
-      return redirectTo(req, res, backTo);
-    }
-    return next(err);
-  }
-});
-
 router.get('/ca-lam/danh-sach', async (req, res, next) => {
   try {
     const ctx = await scheduleService.getListContext({

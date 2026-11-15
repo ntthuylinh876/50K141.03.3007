@@ -24,55 +24,7 @@
       </p>
 
       <% if (isPast) { %>
-        <div class="modal-overlay" data-modal role="dialog" aria-modal="true" aria-live="assertive">
-          <div class="modal-card modal-card--flash" tabindex="-1">
-            <span class="modal-card__bang" aria-hidden="true">!</span>
-            <p class="modal-card__message">Không thể cập nhật ca đã diễn ra</p>
-          </div>
-        </div>
-      <% } %>
-
-      <% if (hasRegistered) { %>
-        <section class="data-card registered-card">
-          <div class="data-card__head">
-            <div>
-              <h2 class="data-card__title">Nhân viên đăng ký ca này</h2>
-              <p class="data-card__subtitle">
-                Đăng ký từ màn Đăng ký ca làm của nhân viên. Chọn người cần đưa vào lịch chính thức.
-              </p>
-            </div>
-            <span class="data-card__note"><%= registered.length %> đăng ký</span>
-          </div>
-
-          <form method="post"
-                action="<%= basePath %>/ca-lam/cap-nhat/<%= maCa %>/<%= ngayISO %>/ap-dung-dang-ky">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-            <div class="staff-list staff-list--registered">
-              <% registered.forEach(function (nv) { %>
-                <label class="staff-row<%= isPast ? '' : ' is-picked' %>">
-                  <input class="u-sr-only" type="checkbox" name="maNV" value="<%= nv.maNV %>"
-                         data-register-pick <%= isPast ? 'disabled' : 'checked' %>>
-                  <span class="staff-row__name"><%= nv.hoTen %></span>
-                  <span class="staff-pill staff-pill--apply" data-register-pill>
-                    <svg aria-hidden="true"><use href="#i-check"></use></svg>
-                    <span data-register-text>Đăng ký</span>
-                  </span>
-                </label>
-              <% }); %>
-            </div>
-
-            <div class="form-actions form-actions--end">
-              <button class="btn btn--secondary" type="submit" <%= isPast ? 'disabled' : '' %>>
-                Áp dụng đăng ký
-              </button>
-            </div>
-          </form>
-        </section>
-      <% } else { %>
-        <p class="form-hint registered-hint">
-          Không có đăng ký ca nào đang chờ áp dụng cho ca này.
-        </p>
+        <%- include('../../partials/notice-modal', { type: 'error', message: 'Không thể cập nhật ca đã diễn ra' }) %>
       <% } %>
 
       <form method="post" action="<%= basePath %>/ca-lam/cap-nhat/<%= maCa %>/<%= ngayISO %>">

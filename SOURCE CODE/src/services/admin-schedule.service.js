@@ -18,9 +18,6 @@ const { nextMaLich } = require('../utils/id');
 const MSG_UPDATE_OK = 'Cập nhật ca làm thành công!';
 const MSG_SHIFT_PAST = 'Không thể cập nhật ca đã diễn ra';
 const MSG_NO_SCHEDULE = 'Chưa có lịch làm việc cho thời gian này!';
-const MSG_APPLY_OK = 'Đã áp dụng đăng ký ca làm!';
-const MSG_APPLY_EMPTY = 'Vui lòng chọn nhân viên đăng ký để áp dụng.';
-const MSG_APPLY_NONE = 'Không còn đăng ký nào cần áp dụng cho ca này.';
 
 /** Khoảng ngày hiển thị của một tuần: "09/11 – 15/11/2026". */
 function weekRangeLabel(weekStartISO) {
@@ -204,6 +201,7 @@ async function getShiftEditor(maCa, ngayISO) {
   );
 
   const inShift = inShiftResult.recordset.map((row) => ({
+    maLich: String(row.MaLich).trim(),
     maNV: String(row.MaNV).trim(),
     hoTen: row.HoTen,
   }));
@@ -221,29 +219,6 @@ async function getShiftEditor(maCa, ngayISO) {
   const gioBatDau = dt.toHM(shift.GioBatDau);
   const gioKetThuc = dt.toHM(shift.GioKetThuc);
 
-  // Đăng ký ca của nhân viên (UC05) cho đúng ca + ngày này, trừ người đã có
-  // trong lịch chính thức. LichRanh lưu danh sách ngày ISO ngăn cách bởi dấu phẩy.
-  const registeredResult = await query(
-    `SELECT dk.MaDK, dk.MaNV, nv.HoTen
-       FROM DangKyCaLam dk
-       JOIN NhanVien nv ON nv.MaNV = dk.MaNV
-      WHERE dk.MaCa = @maCa
-        AND dk.LichRanh LIKE '%' + @ngay + '%'
-        AND nv.TinhTrang <> N'Đã nghỉ'
-      ORDER BY nv.HoTen`,
-    {
-      maCa: { type: sql.Char(10), value: maCaValue },
-      ngay: { type: sql.VarChar(10), value: ngay },
-    },
-  );
-
-  const registered = registeredResult.recordset
-    .map((row) => ({
-      maNV: String(row.MaNV).trim(),
-      hoTen: row.HoTen,
-    }))
-    .filter((row) => !selectedIds.includes(row.maNV));
-
   return {
     maCa: maCaValue,
     ngayISO: ngay,
@@ -258,13 +233,62 @@ async function getShiftEditor(maCa, ngayISO) {
       maNV: String(row.MaNV).trim(),
       hoTen: row.HoTen,
     })),
-    registered,
-    hasRegistered: registered.length > 0,
   };
 }
 
 /**
+ * Các bảng có khóa ngoại trỏ tới LichLamViec(MaLich).
+ * Một dòng lịch đã được tham chiếu thì không được xóa/đổi nhân viên,
+ * nếu không sẽ làm sai lệch dữ liệu chấm công, đơn từ và bảng lương.
+ */
+const SCHEDULE_REFERENCES = [
+  { table: 'ChamCong', column: 'MaLich' },
+  { table: 'CT_XinNghi', column: 'MaLich' },
+  { table: 'DonDoiCa', column: 'MaLichGoc' },
+  { table: 'DonDoiCa', column: 'MaLichMuonDoi' },
+  { table: 'DonLamThay', column: 'MaLich' },
+  { table: 'ChamCongBoSung', column: 'MaLich' },
+  { table: 'ChiTietLuong', column: 'MaLich' },
+];
+
+/** Thông báo nghiệp vụ khi ca đã phát sinh dữ liệu liên quan. */
+function msgScheduleLocked(ngayISO) {
+  return `Ca ngày ${dt.formatDayMonthVN(ngayISO)} đã có dữ liệu chấm công hoặc đơn, không thể xóa`;
+}
+
+/**
+ * Tìm các MaLich đang được tham chiếu bởi ChamCong, CT_XinNghi, DonDoiCa,
+ * DonLamThay, ChamCongBoSung, ChiTietLuong.
+ * @param {object} tx transaction đang mở
+ * @param {string[]} maLiches
+ * @returns {Promise<Set<string>>}
+ */
+async function findReferencedSchedules(tx, maLiches) {
+  if (!maLiches.length) return new Set();
+
+  const request = txRequest(tx);
+  maLiches.forEach((id, i) => request.input(`l${i}`, sql.Char(10), id));
+  const list = maLiches.map((_, i) => `@l${i}`).join(', ');
+  const unionSql = SCHEDULE_REFERENCES.map(
+    ({ table, column }) => `SELECT ${column} AS MaLich FROM ${table} WHERE ${column} IN (${list})`,
+  ).join(' UNION ');
+
+  const result = await request.query(
+    `SELECT DISTINCT refs.MaLich FROM (${unionSql}) AS refs`,
+  );
+  return new Set(result.recordset.map((row) => String(row.MaLich).trim()));
+}
+
+/**
  * Lưu danh sách nhân viên của một ca (M3).
+ *
+ * Không xóa toàn bộ rồi thêm lại: so sánh lịch cũ với lịch mới theo từng
+ * (ngày, ca, nhân viên) để giữ nguyên MãLịch đang được các bảng khác tham chiếu.
+ *  - Nhân viên không đổi: giữ nguyên dòng.
+ *  - Nhân viên mới: dùng lại dòng trống (UPDATE) nếu có, còn lại INSERT.
+ *  - Nhân viên bị gỡ: chỉ DELETE khi dòng chưa có tham chiếu; nếu đã có
+ *    chấm công/đơn/lương thì báo lỗi nghiệp vụ và rollback toàn bộ.
+ *
  * @param {string} maCa
  * @param {string} ngayISO
  * @param {string[]} maNVs Danh sách nhân viên cuối cùng
@@ -275,66 +299,73 @@ async function saveShift(maCa, ngayISO, maNVs) {
 
   const desired = [...new Set((maNVs || []).map((id) => String(id || '').trim()).filter(Boolean))];
   const current = context.inShift.map((row) => row.maNV);
-  const toRemove = current.filter((id) => !desired.includes(id));
-  const toAdd = desired.filter((id) => !current.includes(id));
+  const hasChanges =
+    desired.some((id) => !current.includes(id)) || current.some((id) => !desired.includes(id));
+  if (!hasChanges) return MSG_UPDATE_OK;
 
-  if (toRemove.length || toAdd.length) {
-    await withTransaction(async (tx) => {
-      if (toRemove.length) {
-        const request = txRequest(tx);
-        toRemove.forEach((id, i) => request.input(`nv${i}`, sql.Char(10), id));
-        await request
-          .input('ngay', sql.VarChar(10), context.ngayISO)
-          .input('maCa', sql.Char(10), context.maCa)
-          .query(
-            `DELETE FROM LichLamViec
-              WHERE NgayLam = @ngay AND MaCa = @maCa
-                AND MaNV IN (${toRemove.map((_, i) => `@nv${i}`).join(', ')})`,
-          );
-      }
+  await withTransaction(async (tx) => {
+    // Đọc lại trong transaction để không bỏ sót thay đổi vừa phát sinh.
+    const freshResult = await txRequest(tx)
+      .input('ngay', sql.VarChar(10), context.ngayISO)
+      .input('maCa', sql.Char(10), context.maCa)
+      .query(
+        `SELECT MaLich, MaNV
+           FROM LichLamViec WITH (UPDLOCK, HOLDLOCK)
+          WHERE NgayLam = @ngay AND MaCa = @maCa`,
+      );
 
-      for (const maNV of toAdd) {
-        const maLich = await nextMaLich();
-        await txRequest(tx)
-          .input('maLich', sql.Char(10), maLich)
-          .input('ngay', sql.VarChar(10), context.ngayISO)
-          .input('maCa', sql.Char(10), context.maCa)
-          .input('maNV', sql.Char(10), maNV)
-          .query(
-            `INSERT INTO LichLamViec (MaLich, NgayLam, MaCa, MaNV)
-             VALUES (@maLich, @ngay, @maCa, @maNV)`,
-          );
-      }
+    const rows = freshResult.recordset.map((row) => ({
+      maLich: String(row.MaLich).trim(),
+      maNV: String(row.MaNV).trim(),
+    }));
+    const currentIds = rows.map((row) => row.maNV);
+    const toAdd = desired.filter((id) => !currentIds.includes(id));
+    const toRemove = rows.filter((row) => !desired.includes(row.maNV));
+    if (!toAdd.length && !toRemove.length) return;
+
+    // Chặn xóa/đổi nhân viên của ca đã có dữ liệu liên quan.
+    const referenced = await findReferencedSchedules(
+      tx,
+      toRemove.map((row) => row.maLich),
+    );
+    if (referenced.size > 0) throw badRequest(msgScheduleLocked(context.ngayISO));
+
+    // Dòng bị gỡ nhưng chưa có tham chiếu: tận dụng để đổi nhân viên (UPDATE).
+    const freeRows = toRemove.slice();
+    const insertIds = [];
+    toAdd.forEach((maNV, i) => {
+      if (freeRows[i]) freeRows[i].newMaNV = maNV;
+      else insertIds.push(maNV);
     });
-  }
+
+    for (const row of freeRows) {
+      if (row.newMaNV) {
+        await txRequest(tx)
+          .input('maLich', sql.Char(10), row.maLich)
+          .input('maNV', sql.Char(10), row.newMaNV)
+          .query('UPDATE LichLamViec SET MaNV = @maNV WHERE MaLich = @maLich');
+      } else {
+        await txRequest(tx)
+          .input('maLich', sql.Char(10), row.maLich)
+          .query('DELETE FROM LichLamViec WHERE MaLich = @maLich');
+      }
+    }
+
+    for (const maNV of insertIds) {
+      const maLich = await nextMaLich();
+      await txRequest(tx)
+        .input('maLich', sql.Char(10), maLich)
+        .input('ngay', sql.VarChar(10), context.ngayISO)
+        .input('maCa', sql.Char(10), context.maCa)
+        .input('maNV', sql.Char(10), maNV)
+        .query(
+          `INSERT INTO LichLamViec (MaLich, NgayLam, MaCa, MaNV)
+           VALUES (@maLich, @ngay, @maCa, @maNV)`,
+        );
+    }
+  });
 
   return MSG_UPDATE_OK;
-}
-
-/**
- * Áp dụng đăng ký ca (UC05) vào lịch làm việc chính thức (M3).
- * Chỉ thêm nhân viên còn đăng ký cho đúng ca + ngày, không gỡ người đã xếp.
- *
- * @param {string} maCa
- * @param {string} ngayISO
- * @param {string[]} maNVs nhân viên đăng ký được chọn
- * @returns {Promise<string>} thông báo thành công
- */
-async function applyRegistrations(maCa, ngayISO, maNVs) {
-  const context = await getShiftEditor(maCa, ngayISO);
-  if (context.isPast) throw badRequest(MSG_SHIFT_PAST);
-
-  const selected = [...new Set((maNVs || []).map((id) => String(id || '').trim()).filter(Boolean))];
-  if (selected.length === 0) throw badRequest(MSG_APPLY_EMPTY);
-
-  const allowed = new Set(context.registered.map((row) => row.maNV));
-  const toAdd = selected.filter((id) => allowed.has(id));
-  if (toAdd.length === 0) throw badRequest(MSG_APPLY_NONE);
-
-  const finalIds = context.inShift.map((row) => row.maNV).concat(toAdd);
-  await saveShift(maCa, ngayISO, finalIds);
-
-  return MSG_APPLY_OK;
 }
 
 /** Dữ liệu màn hình Xem danh sách ca làm (M4). */
@@ -401,9 +432,6 @@ module.exports = {
   MSG_UPDATE_OK,
   MSG_SHIFT_PAST,
   MSG_NO_SCHEDULE,
-  MSG_APPLY_OK,
-  MSG_APPLY_EMPTY,
-  MSG_APPLY_NONE,
   weekRangeLabel,
   buildWeekOptions,
   buildWeeksOfMonth,
@@ -411,7 +439,6 @@ module.exports = {
   getUpdateContext,
   getShiftEditor,
   saveShift,
-  applyRegistrations,
   getListContext,
   isShiftPast,
 };

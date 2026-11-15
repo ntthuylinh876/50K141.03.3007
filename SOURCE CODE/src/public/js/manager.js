@@ -73,26 +73,6 @@
   });
 
   /* ------------------------------------------------------------------ */
-  /* Chọn nhân viên đăng ký ca để áp dụng vào lịch (M3)                  */
-  /* ------------------------------------------------------------------ */
-  document.querySelectorAll('[data-register-pick]').forEach(function (checkbox) {
-    var row = checkbox.closest('.staff-row');
-    if (!row) return;
-
-    var text = row.querySelector('[data-register-text]');
-    var use = row.querySelector('[data-register-pill] use');
-
-    var sync = function () {
-      row.classList.toggle('is-picked', checkbox.checked);
-      if (text) text.textContent = checkbox.checked ? 'Đăng ký' : 'Bỏ chọn';
-      if (use) use.setAttribute('href', checkbox.checked ? '#i-check' : '#i-plus');
-    };
-
-    checkbox.addEventListener('change', sync);
-    sync();
-  });
-
-  /* ------------------------------------------------------------------ */
   /* Chuyển nhân viên vào / ra khỏi ca                                   */
   /* ------------------------------------------------------------------ */
   var staffIn = document.querySelector('[data-staff-list="in"]');
