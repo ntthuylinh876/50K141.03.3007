@@ -171,7 +171,7 @@ router.post('/nhan-vien/sua/:maNV', async (req, res, next) => {
     req.flash('success', employeeService.MSG_UPDATED);
     return res.redirect('/chu-quan/nhan-vien/sua');
   } catch (err) {
-    if (err.status === 400 || err.status === 404) {
+      if (err.status === 400 || err.status === 404 || err.status === 409) {
       const employee = await employeeService.getEmployee(req.params.maNV).catch(() => null);
       if (!employee) return next(err);
       return res.status(err.status).render('pages/owner/employee-edit', {

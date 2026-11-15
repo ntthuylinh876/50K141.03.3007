@@ -304,14 +304,18 @@ async function saveShift(maCa, ngayISO, maNVs) {
   if (!hasChanges) return MSG_UPDATE_OK;
 
   await withTransaction(async (tx) => {
-    // Đọc lại trong transaction để không bỏ sót thay đổi vừa phát sinh.
+    // Share the same lock key as employee self-registration; it also covers empty slots.
+    await txRequest(tx)
+      .input('lockKey', sql.VarChar(64), `schedule:${context.ngayISO}:${context.maCa}`)
+      .query('SELECT pg_advisory_xact_lock(hashtextextended(@lockKey, 0))');
     const freshResult = await txRequest(tx)
       .input('ngay', sql.VarChar(10), context.ngayISO)
       .input('maCa', sql.Char(10), context.maCa)
       .query(
         `SELECT MaLich, MaNV
-           FROM LichLamViec WITH (UPDLOCK, HOLDLOCK)
-          WHERE NgayLam = @ngay AND MaCa = @maCa`,
+           FROM LichLamViec
+          WHERE NgayLam = @ngay AND MaCa = @maCa
+          FOR UPDATE`,
       );
 
     const rows = freshResult.recordset.map((row) => ({

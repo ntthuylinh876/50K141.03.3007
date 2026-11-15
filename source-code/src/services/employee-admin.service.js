@@ -4,7 +4,7 @@
  * UC14 — Chủ quán quản lý thông tin nhân viên:
  *  - O4 (7.2.3.48–51): Thêm nhân viên + tự sinh tài khoản đăng nhập
  *  - O5 (7.2.3.52–54): Sửa thông tin nhân viên
- *  - O6: Xóa nhân viên (xóa mềm — quyết định C5)
+ *  - O6: Xóa nhân viên; dữ liệu đang được tham chiếu sẽ bị FK bảo vệ.
  *
  * Không đổi CSDL: mọi trường đều dùng cột có sẵn trong bảng NhanVien.
  * Số điện thoại là duy nhất trên toàn hệ thống (C12) nên phải kiểm tra chéo
@@ -13,7 +13,7 @@
 
 const { query, sql } = require('../config/db');
 const { hashPassword, generateTempPassword } = require('../utils/password');
-const { badRequest, notFound } = require('../utils/http-error');
+const { AppError, badRequest, notFound } = require('../utils/http-error');
 const { nextMaNV } = require('../utils/id');
 const dt = require('../utils/datetime');
 const fmt = require('../utils/format');
@@ -26,7 +26,12 @@ const MSG_ADDED = 'Thêm nhân viên thành công';
 const MSG_UPDATED = 'Đã cập nhật thông tin thành công!';
 const MSG_DELETED = 'Xóa nhân viên thành công!';
 const MSG_NO_EMPLOYEE = 'Không tìm thấy nhân viên.';
-const MSG_ALREADY_RESIGNED = 'Nhân viên này đã ở trạng thái nghỉ việc.';
+const MSG_DELETE_REFERENCED = 'Không thể xóa nhân viên này vì dữ liệu đã phát sinh lịch làm hoặc phiếu lương.';
+
+function mapEmployeeDeleteError(err) {
+  if (err.code !== '23503') return err;
+  return new AppError(409, MSG_DELETE_REFERENCED, { code: 'EMPLOYEE_HAS_RELATED_DATA' });
+}
 
 /** Vị trí làm việc theo ảnh UI (Thêm nhân viên 2 chọn "Phục vụ"). */
 const POSITIONS = ['Quản lý', 'Thu ngân', 'Pha chế', 'Phục vụ'];
@@ -337,23 +342,20 @@ async function updateEmployee(maNV, body) {
 }
 
 /**
- * Xóa mềm: TinhTrang = 'Đã nghỉ', giữ toàn bộ lịch sử lương (C5).
+ * Xóa vật lý khi chưa có dữ liệu phụ thuộc; FK từ chối nếu lịch sử đã phát sinh.
  * @param {string} maNV
  */
 async function removeEmployee(maNV) {
   const code = text(maNV).toUpperCase();
   const employee = await getEmployee(code);
-  if (employee.isResigned) throw badRequest(MSG_ALREADY_RESIGNED);
-
-  await query(
-    `UPDATE NhanVien SET TinhTrang = @resigned WHERE MaNV = @maNV`,
-    {
-      resigned: { type: sql.NVarChar(20), value: STATUS_RESIGNED },
+  try {
+    await query('DELETE FROM NhanVien WHERE MaNV = @maNV', {
       maNV: { type: sql.Char(10), value: code },
-    },
-  );
-
-  return { message: MSG_DELETED, employee: { ...employee, tinhTrang: STATUS_RESIGNED } };
+    });
+  } catch (err) {
+    throw mapEmployeeDeleteError(err);
+  }
+  return { message: MSG_DELETED, employee };
 }
 
 module.exports = {
@@ -368,6 +370,7 @@ module.exports = {
   MSG_UPDATED,
   MSG_DELETED,
   MSG_NO_EMPLOYEE,
+  mapEmployeeDeleteError,
   parseEmployeeForm,
   parseBankAccount,
   bankLabel,

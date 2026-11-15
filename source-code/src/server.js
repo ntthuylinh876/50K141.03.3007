@@ -14,6 +14,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 
 const config = require('./config/env');
+const { createSessionStore } = require('./config/session-store');
 const { getPool, closePool } = require('./config/db');
 const { loadCurrentUser } = require('./middleware/auth');
 const { flashMiddleware } = require('./middleware/flash');
@@ -31,7 +32,8 @@ const app = express();
 
 // Số lớp reverse proxy thật đứng trước ứng dụng (0 = không có).
 // Đặt đúng số lớp để Express lấy IP từ X-Forwarded-For một cách an toàn.
-app.set('trust proxy', config.wifi.trustProxy);
+const isVercel = Boolean(process.env.VERCEL);
+app.set('trust proxy', config.isProduction || isVercel ? 1 : config.wifi.trustProxy);
 app.set('view engine', 'ejs');
 app.set('views', config.paths.views);
 app.set('x-powered-by', false);
@@ -70,20 +72,19 @@ app.use(
 app.use(express.urlencoded({ extended: false, limit: '256kb' }));
 app.use(express.json({ limit: '256kb' }));
 
-app.use(
-  session({
-    name: 'nj.sid',
-    secret: config.session.secret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: config.isProduction,
-      maxAge: config.session.maxAgeMs,
-    },
-  }),
-);
+app.use(session({
+  name: 'nj.sid',
+  secret: config.session.secret,
+  store: createSessionStore(session),
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: config.isProduction || isVercel,
+    maxAge: config.session.maxAgeMs,
+  },
+}));
 
 app.use(flashMiddleware);
 app.use(attachCsrfToken);
@@ -95,8 +96,28 @@ app.use(viewLocals);
 /* Route                                                               */
 /* ------------------------------------------------------------------ */
 
-app.get('/suc-khoe', (req, res) => {
-  res.json({ ok: true, env: config.env, time: new Date().toISOString() });
+app.get('/suc-khoe', async (req, res, next) => {
+  try {
+    await getPool().then((pool) => pool.query('SELECT 1'));
+    return res.json({ ok: true, env: config.env, time: new Date().toISOString(), database: 'connected' });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// Vercel invokes this route on a schedule; local deployments keep the existing
+// in-process payroll timer below. Never run the job from an unauthenticated URL.
+app.get('/api/cron/payroll', async (req, res, next) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.get('authorization') !== `Bearer ${secret}`) {
+    return res.sendStatus(secret ? 401 : 503);
+  }
+  try {
+    const result = await require('./services/payroll.service').runMonthlyPayrollCheck();
+    return res.json({ ok: true, created: Boolean(result.created), reason: result.reason || null });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 app.get('/', (req, res) => {
@@ -120,11 +141,11 @@ app.use(errorHandler);
 
 async function start() {
   try {
-    await getPool();
-    console.log(`[SQL] Đã kết nối ${config.db.server}:${config.db.port}/${config.db.database}`);
+    const pool = await getPool();
+    await pool.query('SELECT 1');
+    console.log('[DB] Đã kết nối PostgreSQL.');
   } catch (err) {
-    console.error('[SQL] Không kết nối được cơ sở dữ liệu:', err.message);
-    console.error('      Kiểm tra lại thông tin DB_* trong file .env và chắc chắn SQL Server đang chạy.');
+    console.error('[DB] Không kết nối được PostgreSQL:', err.message);
     process.exit(1);
   }
 
@@ -137,7 +158,7 @@ async function start() {
   });
 
   // UC13.1: sinh bảng lương cho tháng đã kết thúc (BR-UC13.1-01).
-  startPayrollJob();
+  if (!isVercel) startPayrollJob();
 
   const shutdown = async (signal) => {
     console.log(`\n[APP] Nhận ${signal}, đang đóng kết nối...`);

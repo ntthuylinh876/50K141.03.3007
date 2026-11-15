@@ -247,7 +247,7 @@ async function createProposal(maPL, maCTL, input, maQL, role) {
       WHERE MaPL = @maPL
         AND NoiDungDeXuat IS NOT NULL
         AND TrangThai = @status
-        AND JSON_VALUE(NoiDungDeXuat, '$.maCTL') = @maCTL
+        AND ("NoiDungDeXuat"::jsonb ->> 'maCTL') = @maCTL
       ORDER BY NgayGui DESC`,
     {
       maPL: { type: sql.Char(10), value: line.maPL },

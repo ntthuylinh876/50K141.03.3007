@@ -178,14 +178,18 @@ async function saveRegistration(maNV, slots) {
     const traceByShift = new Map();
 
     for (const item of picked) {
-      // Khóa dòng của đúng ca + ngày để kiểm tra định biên và chống trùng.
+      // PostgreSQL advisory lock serializes writers even if this slot has no rows yet.
+      await txRequest(tx)
+        .input('lockKey', sql.VarChar(64), `schedule:${item.iso}:${item.maCa}`)
+        .query('SELECT pg_advisory_xact_lock(hashtextextended(@lockKey, 0))');
       const existing = await txRequest(tx)
         .input('ngay', sql.VarChar(10), item.iso)
         .input('maCa', sql.Char(10), item.maCa)
         .query(
           `SELECT MaLich, MaNV
-             FROM LichLamViec WITH (UPDLOCK, HOLDLOCK)
-            WHERE NgayLam = @ngay AND MaCa = @maCa`,
+             FROM LichLamViec
+            WHERE NgayLam = @ngay AND MaCa = @maCa
+            FOR UPDATE`,
         );
 
       const rows = existing.recordset.map((row) => ({

@@ -1,84 +1,44 @@
 # Hệ thống chấm công và tính lương — NICK & THE JUICE COFFEE
 
-Ứng dụng web nội bộ cho quán cà phê ~10 nhân viên: chấm công bằng Wi-Fi quán, xếp ca,
-duyệt đơn từ, tổng hợp giờ làm và tính lương theo giờ.
+Ứng dụng nội bộ cho quán cà phê: chấm công, xếp ca, duyệt đơn và tính lương.
 
-- **Nguồn sự thật:** `doc/50K141.03.3007.txt` (SRS + 17 bảng CSDL + đặc tả màn hình)
-  và `doc/UI/**` (168 ảnh giao diện). Thứ tự ưu tiên khi mâu thuẫn:
-  **SRS > CSDL > đặc tả màn hình > UI**.
-- **Hệ quản trị CSDL:** Microsoft SQL Server.
-- **Công nghệ:** Node.js + Express 5 + EJS (render phía máy chủ, không cần bước build).
+- **Backend:** Node.js 20+, Express 5, EJS.
+- **Database:** Supabase PostgreSQL qua node-postgres (`pg`).
+- **Deploy:** Express app export tại `index.js`; Vercel Functions.
 
-> **Trạng thái: đã xong Giai đoạn 1–4, đang rà soát Giai đoạn 5.** Xem mục [Phạm vi đã hoàn thành](#phạm-vi-đã-hoàn-thành-giai-đoạn-1) và `docs/PROGRESS.md`.
-
----
-
-## 1. Yêu cầu môi trường
-
-| Thành phần | Phiên bản đã kiểm thử | Ghi chú |
-|---|---|---|
-| Node.js | 26.13.0 | tối thiểu 20 |
-| npm | 11.20.0 | |
-| Microsoft SQL Server | 2025 Developer | instance `localhost`, cổng `1433`, bật **Mixed Mode Authentication** |
-
-## 2. Cài đặt và chạy (một lệnh sau khi cấu hình)
+## Chạy local
 
 ```powershell
-# 1) Cài thư viện
-npm install
-
-# 2) Tạo file cấu hình từ mẫu, sửa thông tin đăng nhập SQL Server
+npm ci
 Copy-Item .env.example .env
-
-# 3) Tạo CSDL trắng (nếu chưa có) + chạy migration + nạp dữ liệu mẫu
-npm run db:setup
-
-# 4) Chạy ứng dụng
-npm start          # http://localhost:3000
 ```
 
-`npm run dev` chạy chế độ tự khởi động lại khi sửa mã nguồn.
+Điền `SESSION_SECRET` (ít nhất 16 ký tự) và `DATABASE_URL` trong `.env`, sau đó chạy:
 
-### Các lệnh có sẵn
+```powershell
+npm start
+```
 
-| Lệnh | Chức năng |
+`npm run dev` bật chế độ tự khởi động lại. `npm test` chạy bộ kiểm thử.
+
+Database Supabase hiện đã có schema và dữ liệu. **Không chạy `npm run db:seed`** vì script này xóa dữ liệu trước khi nạp dữ liệu mẫu. `npm run db:migrate` đã bị vô hiệu hóa vì các file migration cũ là T-SQL.
+
+## Deploy Vercel
+
+Trong Project Settings → Environment Variables, cấu hình `SESSION_SECRET` và `DATABASE_URL` cho từng môi trường Development, Preview và Production, rồi redeploy. Thêm `CRON_SECRET` (chuỗi ngẫu nhiên dài) ở Production để bảo vệ lịch sinh bảng lương. Trên Vercel, ứng dụng dùng `connect-pg-simple` và cần bảng `public.user_sessions`; ứng dụng không tự tạo bảng. SQL tạo bảng đang chờ xác nhận, vì vậy chưa bật đăng nhập trên deploy cho tới khi bảng được tạo.
+
+Dùng connection string Supabase phù hợp cho serverless. `.env` chỉ dành cho local và đã được `.gitignore` bỏ qua.
+
+## Lệnh thường dùng
+
+| Lệnh | Mục đích |
 |---|---|
-| `npm start` | Chạy ứng dụng |
-| `npm run dev` | Chạy kèm `--watch` |
-| `npm run db:migrate` | Áp dụng thay đổi CSDL đã được duyệt (idempotent) |
-| `npm run db:seed` | Xóa và nạp lại toàn bộ dữ liệu mẫu |
-| `npm run db:setup` | `db:migrate` + `db:seed` |
-| `npm test` | Kiểm thử tự động (66 test) |
-| `node scripts/smoke-test.js` | Kiểm tra khói 22 mục khi máy chủ đang chạy |
+| `npm start` | Chạy server local |
+| `npm run dev` | Chạy server với watch mode |
+| `npm test` | Chạy unit test |
+| `npm run payroll:generate` | Sinh bảng lương thủ công; chỉ chạy khi chủ động cần ghi dữ liệu |
 
-### Chuẩn bị CSDL lần đầu
-
-Ứng dụng dùng **hai tài khoản SQL Server** tách quyền:
-
-| Tài khoản | Quyền | Dùng cho |
-|---|---|---|
-| `chamcong_app` | `db_datareader`, `db_datawriter` | chạy ứng dụng (`DB_USER`) |
-| `chamcong_migrator` | `db_owner` | chỉ chạy migration (`DB_ADMIN_USER`) |
-
-Nếu CSDL `CHAMCONGTINHLUONG` chưa tồn tại, tạo bằng `sqlcmd` (hoặc SSMS) rồi chạy 2 script tạo login:
-
-```sql
-CREATE DATABASE CHAMCONGTINHLUONG;
-GO
-CREATE LOGIN chamcong_app      WITH PASSWORD = 'ChamCong@2026!App';
-CREATE LOGIN chamcong_migrator WITH PASSWORD = 'ChamCong@2026!Migrate';
-GO
-USE CHAMCONGTINHLUONG;
-CREATE USER chamcong_app      FOR LOGIN chamcong_app;
-CREATE USER chamcong_migrator FOR LOGIN chamcong_migrator;
-ALTER ROLE db_datareader ADD MEMBER chamcong_app;
-ALTER ROLE db_datawriter ADD MEMBER chamcong_app;
-ALTER ROLE db_owner      ADD MEMBER chamcong_migrator;
-```
-
-> Trên máy phát triển này CSDL đã tồn tại sẵn nên chỉ cần `npm run db:setup`.
-> Đổi mật khẩu trong `.env` cho khớp nếu bạn dùng mật khẩu khác.
-
+---
 ## 3. Tài khoản demo
 
 Mật khẩu chung: **`123456`** (băm bằng bcrypt, không lưu mật khẩu thô).
@@ -173,7 +133,7 @@ src/middleware/           auth (RBAC), csrf, wifi, flash, locals, error
 src/services/             nghiệp vụ (auth, attendance)
 src/routes/               định tuyến theo vai trò
 src/views/                EJS (partials + pages)
-src/public/               CSS, JS, ảnh
+public/                   CSS, JS, ảnh (Vercel static assets)
 ```
 
 ## 7. Những điểm lệch so với tài liệu gốc (đã được duyệt)

@@ -1,0 +1,202 @@
+﻿{
+    "tables":  {
+                   "QuanLy":  [
+                                  "MaQL",
+                                  "HoTen",
+                                  "SoDienThoai",
+                                  "MatKhau"
+                              ],
+                   "PhanHoiLuong":  [
+                                        "MaPH",
+                                        "NgayGui",
+                                        "LyDo",
+                                        "TrangThai",
+                                        "MaNV",
+                                        "MaQL",
+                                        "MaPL"
+                                    ],
+                   "ChamCongBoSung":  [
+                                          "MaCCBS",
+                                          "GioVaoThucTe",
+                                          "GioRaThucTe",
+                                          "MaLich",
+                                          "MaNV",
+                                          "MaQL",
+                                          "NgayGui",
+                                          "LyDo",
+                                          "TrangThai"
+                                      ],
+                   "CT_XinNghi":  [
+                                      "MaXN",
+                                      "MaLich"
+                                  ],
+                   "CaLam":  [
+                                 "MaCa",
+                                 "TenCa",
+                                 "GioBatDau",
+                                 "GioKetThuc",
+                                 "SoNVNgayThuong",
+                                 "SoNVCuoiTuan"
+                             ],
+                   "PhieuLuong":  [
+                                      "MaPL",
+                                      "TongGioLam",
+                                      "LuongTheoGioLam",
+                                      "TienPhat",
+                                      "TienUngLuong",
+                                      "ChenhLechKetChuyen",
+                                      "MaBL",
+                                      "MaND"
+                                  ],
+                   "DonDoiCa":  [
+                                    "MaDC",
+                                    "NgayGui",
+                                    "LyDo",
+                                    "TrangThai",
+                                    "MaLichGoc",
+                                    "MaLichMuonDoi",
+                                    "MaNV",
+                                    "MaQL"
+                                ],
+                   "DangKyCaLam":  [
+                                       "MaDK",
+                                       "LichRanh",
+                                       "NgayGui",
+                                       "MaNV",
+                                       "MaCa"
+                                   ],
+                   "DonLamThay":  [
+                                      "MaLT",
+                                      "NgayGui",
+                                      "LyDo",
+                                      "TrangThai",
+                                      "MaLich",
+                                      "MaNV",
+                                      "MaQL"
+                                  ],
+                   "DonXinNghi":  [
+                                      "MaXN",
+                                      "NgayGui",
+                                      "LyDo",
+                                      "TrangThai",
+                                      "NgayBatDau",
+                                      "NgayKetThuc",
+                                      "MaNV",
+                                      "MaQL"
+                                  ],
+                   "NhanVien":  [
+                                    "MaNV",
+                                    "HoTen",
+                                    "SoDienThoai",
+                                    "MatKhau",
+                                    "ViTri",
+                                    "NgayVaoLam",
+                                    "TinhTrang",
+                                    "MucLuong",
+                                    "TenNganHang",
+                                    "SoTaiKhoan"
+                                ],
+                   "UngLuong":  [
+                                    "MaUL",
+                                    "NgayGui",
+                                    "LyDo",
+                                    "TrangThai",
+                                    "SoTien",
+                                    "MaPL",
+                                    "MaNV",
+                                    "MaQL"
+                                ],
+                   "LichLamViec":  [
+                                       "MaLich",
+                                       "NgayLam",
+                                       "MaCa",
+                                       "MaNV"
+                                   ],
+                   "ChamCong":  [
+                                    "MaCC",
+                                    "MaLich",
+                                    "GioVao",
+                                    "GioRa"
+                                ],
+                   "ChiTietLuong":  [
+                                        "MaCTL",
+                                        "SoGioLam",
+                                        "HeSoNgay",
+                                        "MucLuong",
+                                        "PhatDiTre",
+                                        "PhatBoCa",
+                                        "MaLich",
+                                        "MaPL"
+                                    ],
+                   "ChuQuan":  [
+                                   "MaQL"
+                               ],
+                   "BangLuong":  [
+                                     "MaBL",
+                                     "Thang",
+                                     "Nam",
+                                     "NgayBatDau",
+                                     "NgayKetThuc",
+                                     "NgayChiTra",
+                                     "TinhTrang"
+                                 ]
+               },
+    "columns":  [
+                    "ChenhLechKetChuyen",
+                    "GioBatDau",
+                    "GioKetThuc",
+                    "GioRa",
+                    "GioRaThucTe",
+                    "GioVao",
+                    "GioVaoThucTe",
+                    "HeSoNgay",
+                    "HoTen",
+                    "LichRanh",
+                    "LuongTheoGioLam",
+                    "LyDo",
+                    "MaBL",
+                    "MaCa",
+                    "MaCC",
+                    "MaCCBS",
+                    "MaCTL",
+                    "MaDC",
+                    "MaDK",
+                    "MaLich",
+                    "MaLichGoc",
+                    "MaLichMuonDoi",
+                    "MaLT",
+                    "MaND",
+                    "MaNV",
+                    "MaPH",
+                    "MaPL",
+                    "MaQL",
+                    "MatKhau",
+                    "MaUL",
+                    "MaXN",
+                    "MucLuong",
+                    "Nam",
+                    "NgayBatDau",
+                    "NgayChiTra",
+                    "NgayGui",
+                    "NgayKetThuc",
+                    "NgayLam",
+                    "NgayVaoLam",
+                    "PhatBoCa",
+                    "PhatDiTre",
+                    "SoDienThoai",
+                    "SoGioLam",
+                    "SoNVCuoiTuan",
+                    "SoNVNgayThuong",
+                    "SoTaiKhoan",
+                    "SoTien",
+                    "TenCa",
+                    "TenNganHang",
+                    "Thang",
+                    "TienPhat",
+                    "TienUngLuong",
+                    "TinhTrang",
+                    "TongGioLam",
+                    "TrangThai",
+                    "ViTri"
+                ]
+}

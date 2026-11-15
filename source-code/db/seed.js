@@ -18,8 +18,7 @@
  *    - Script IDEMPOTENT: xóa sạch dữ liệu cũ rồi nạp lại, không đụng cấu trúc.
  */
 
-const sql = require('mssql');
-const { appConfig } = require('../src/config/db');
+const { sql } = require('../src/config/db');
 const { hashPassword } = require('../src/utils/password');
 const dt = require('../src/utils/datetime');
 const payroll = require('../src/utils/payroll');
@@ -1002,12 +1001,18 @@ async function seedAdvances(tx, plan, payrollResult) {
 /* -------------------------------------------------------------------------- */
 
 async function main() {
+  if (process.env.ALLOW_DESTRUCTIVE_SEED !== 'true') {
+    throw new Error('Seed bị khóa vì sẽ xóa dữ liệu trước khi nạp. Chỉ bật ALLOW_DESTRUCTIVE_SEED=true cho database thử nghiệm có thể xóa.');
+  }
+  if (process.env.ALLOW_DESTRUCTIVE_SEED !== 'true') {
+    throw new Error('Seed bị khóa vì sẽ xóa dữ liệu trước khi nạp. Chỉ đặt ALLOW_DESTRUCTIVE_SEED=true cho database dùng thử có thể xóa.');
+  }
   console.log('[SEED] Bắt đầu nạp dữ liệu mẫu…');
 
   const passwordHash = await hashPassword(DEMO_PASSWORD);
   const todayISO = dt.todayISO();
 
-  const pool = await new sql.ConnectionPool(appConfig).connect();
+  const pool = await new sql.ConnectionPool().connect();
   const tx = new sql.Transaction(pool);
   await tx.begin();
 

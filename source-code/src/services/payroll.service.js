@@ -354,15 +354,20 @@ async function generateMonthlyPayroll({ year, month, today = dt.todayISO() } = {
   });
 
   const outcome = await withTransaction(async (tx) => {
-    // Khóa kỳ lại để hai lượt chạy không sinh trùng.
+    // A transaction-scoped PostgreSQL lock prevents duplicate generation when
+    // concurrent requests/jobs target the same payroll period.
+    await txRequest(tx)
+      .input('lockKey', sql.VarChar(64), `payroll:${meta.year}-${String(meta.month).padStart(2, '0')}`)
+      .query('SELECT pg_advisory_xact_lock(hashtextextended(@lockKey, 0))');
     const duplicate = await txRequest(tx)
       .input('maBL', sql.Char(10), meta.maBL)
       .input('year', sql.Int, meta.year)
       .input('month', sql.Int, meta.month)
       .query(
-        `SELECT TOP 1 MaBL
-           FROM BangLuong WITH (UPDLOCK, HOLDLOCK)
-          WHERE MaBL = @maBL OR (Nam = @year AND Thang = @month)`,
+        `SELECT MaBL
+           FROM BangLuong
+          WHERE MaBL = @maBL OR (Nam = @year AND Thang = @month)
+          FOR UPDATE`,
       );
 
     if (duplicate.recordset.length) return RESULT.EXISTS;
