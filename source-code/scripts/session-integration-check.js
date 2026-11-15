@@ -79,7 +79,7 @@ function assert(condition, message) {
 
 async function main() {
   const config = require('../src/config/env');
-  const { app } = require('../src/server');
+  const app = require('../src/server');
   const { pool } = require('../src/config/db');
   const signature = require('cookie-signature');
 
